@@ -32,6 +32,7 @@ import (
 	"ducktainer/internal/compose"
 	"ducktainer/internal/config"
 	"ducktainer/internal/docker"
+	"ducktainer/internal/dockersock"
 	"ducktainer/internal/engine"
 	"ducktainer/internal/i18n"
 	"ducktainer/internal/proxy"
@@ -261,7 +262,7 @@ func localClient(cfg *config.Config, host string) (*docker.Client, error) {
 		if e, ok := cfg.Endpoint("local"); ok && !strings.HasPrefix(e.URL, "tcp") {
 			ep = e
 		} else {
-			ep.URL = "unix:///var/run/docker.sock"
+			ep.URL = "unix://" + dockersock.Path()
 		}
 	}
 	return docker.New(ep)

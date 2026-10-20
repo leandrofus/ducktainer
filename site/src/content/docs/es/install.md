@@ -84,8 +84,8 @@ mode:    group
 | Instalación detectada | El servicio corre como |
 |---|---|
 | Socket accesible por un grupo (`root:docker 0660`, con cualquier nombre de grupo) | `ducktainer` + ese grupo |
-| Docker rootless (`/run/user/1000/docker.sock`) | el dueño del socket |
+| Docker rootless (`/run/user/1000/docker.sock`) o Podman rootless (`/run/user/1000/podman/podman.sock`) | el dueño del socket |
 | Socket solo de root, o Podman | root (con aviso) |
-| Docker instalado pero sin arrancar | lo que indique la unit `docker.socket` |
+| Instalado pero sin arrancar | lo que indique la unit `docker.socket`; Podman sin socket de API activo: se habilita `podman.socket` solo (root) |
 
 Si cambias la instalación de Docker, vuelve a ejecutar `sudo ducktainer setup`.

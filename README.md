@@ -94,9 +94,9 @@ mode:    group
 | Detected installation | The service runs as |
 |---|---|
 | Socket accessible by a group (`root:docker 0660`, any group name) | `ducktainer` + that group |
-| Rootless Docker (`/run/user/1000/docker.sock`) | the socket owner |
+| Rootless Docker (`/run/user/1000/docker.sock`) or rootless Podman (`/run/user/1000/podman/podman.sock`) | the socket owner |
 | Root-only socket, Podman | root (with a warning) |
-| Installed but not started yet | what the `docker.socket` unit says |
+| Installed but not started yet | what the `docker.socket` unit says; Podman without an active API socket: `podman.socket` is enabled for you (root) |
 
 The result is written to `/etc/systemd/system/ducktainer.service.d/10-docker-access.conf`. Run `sudo ducktainer setup` again whenever the Docker installation changes (`--socket PATH` forces a socket).
 

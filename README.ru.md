@@ -94,9 +94,9 @@ mode:    group
 | Обнаруженная установка | Служба работает от имени |
 |---|---|
 | Сокет доступен группе (`root:docker 0660`, любое имя группы) | `ducktainer` + эта группа |
-| Rootless Docker (`/run/user/1000/docker.sock`) | владелец сокета |
+| Rootless Docker (`/run/user/1000/docker.sock`) или rootless Podman (`/run/user/1000/podman/podman.sock`) | владелец сокета |
 | Сокет только для root, Podman | root (с предупреждением) |
-| Установлен, но ещё не запущен | то, что указано в юните `docker.socket` |
+| Установлен, но ещё не запущен | то, что указано в юните `docker.socket`; Podman без активного сокета API: `podman.socket` включается сам (root) |
 
 Результат записывается в `/etc/systemd/system/ducktainer.service.d/10-docker-access.conf`. Запускайте `sudo ducktainer setup` снова каждый раз, когда меняется установка Docker (`--socket PATH` задаёт сокет принудительно).
 

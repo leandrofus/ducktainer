@@ -21,6 +21,7 @@ import (
 
 	"ducktainer/internal/config"
 	"ducktainer/internal/docker"
+	"ducktainer/internal/dockersock"
 )
 
 // FS reads and writes stack files where they live: on this machine for the
@@ -88,7 +89,20 @@ func dockerSocket(ep config.Endpoint) string {
 	if ep.DockerSocket != "" {
 		return ep.DockerSocket
 	}
-	return "/var/run/docker.sock"
+	// a local unix endpoint: the socket the daemon really listens on
+	if u, err := url.Parse(ep.URL); err == nil && u.Scheme == "unix" {
+		p := u.Path
+		if p == "" {
+			p = u.Host
+		}
+		if dockersock.IsSocket(p) {
+			return p
+		}
+		if alt := dockersock.Find(); alt != "" {
+			return alt
+		}
+	}
+	return dockersock.Default
 }
 
 // NodeFS reaches the node's filesystem through a long-lived helper container
