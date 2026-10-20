@@ -5,6 +5,7 @@ package setup
 
 import (
 	"bufio"
+	"ducktainer/internal/dockersock"
 	"ducktainer/internal/i18n"
 	"fmt"
 	"io/fs"
@@ -37,6 +38,9 @@ type Plan struct {
 	Mode    Mode        `json:"mode"`
 	RunUser string      `json:"run_user,omitempty"`
 	Notes   []string    `json:"notes,omitempty"`
+	// Enable is a systemd unit Apply starts and enables so the socket exists
+	// (Podman only listens once podman.socket is active).
+	Enable string `json:"enable,omitempty"`
 }
 
 func (p *Plan) note(f string, a ...any) { p.Notes = append(p.Notes, i18n.Sprintf(f, a...)) }
@@ -53,11 +57,9 @@ func candidates(explicit string) [][2]string {
 	if h := strings.TrimPrefix(os.Getenv("DOCKER_HOST"), "unix://"); h != "" && h != os.Getenv("DOCKER_HOST") {
 		out = append(out, [2]string{h, "DOCKER_HOST"})
 	}
-	out = append(out, [2]string{"/var/run/docker.sock", "standard path"}, [2]string{"/run/docker.sock", "standard path"})
-	if m, _ := filepath.Glob("/run/user/*/docker.sock"); len(m) == 1 {
-		out = append(out, [2]string{m[0], "rootless Docker"})
+	for _, c := range dockersock.Candidates() {
+		out = append(out, [2]string{c.Path, c.Source})
 	}
-	out = append(out, [2]string{"/run/podman/podman.sock", "Podman"})
 	return out
 }
 
@@ -160,8 +162,26 @@ func Detect(explicit string) *Plan {
 		}
 		return p
 	}
+	// Podman installed but its API socket is not active (it is off by default)
+	if podmanInstalled() {
+		p.Socket, p.Source, p.Mode, p.Enable = "/run/podman/podman.sock", "Podman (podman.socket not active yet)", ModeRoot, "podman.socket"
+		p.note("Podman found without an active API socket: podman.socket will be enabled and the service will run as root")
+		return p
+	}
 	p.note("no Docker daemon found; install Docker and run `sudo ducktainer setup`")
 	return p
+}
+
+func podmanInstalled() bool {
+	if _, err := exec.LookPath("podman"); err != nil {
+		return false
+	}
+	for _, f := range []string{"/usr/lib/systemd/system/podman.socket", "/lib/systemd/system/podman.socket", "/etc/systemd/system/podman.socket"} {
+		if _, err := os.Stat(f); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // DropInContent renders the systemd drop-in for a plan ("" = none needed).
@@ -210,6 +230,11 @@ func (p *Plan) Apply(restart bool) error {
 	}
 	if out, err := exec.Command("systemctl", "daemon-reload").CombinedOutput(); err != nil {
 		return fmt.Errorf("systemctl daemon-reload: %v: %s", err, out)
+	}
+	if p.Enable != "" {
+		if out, err := exec.Command("systemctl", "enable", "--now", p.Enable).CombinedOutput(); err != nil {
+			return fmt.Errorf("systemctl enable --now %s: %v: %s", p.Enable, err, out)
+		}
 	}
 	if restart {
 		exec.Command("systemctl", "try-restart", "ducktainer.service").Run()

@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"ducktainer/internal/dockersock"
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/yamux"
 )
@@ -51,11 +52,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	sockPath := cfg.Socket
 	if sockPath == "" {
-		if dh := os.Getenv("DOCKER_HOST"); dh != "" {
-			sockPath = strings.TrimPrefix(dh, "unix://")
-		} else {
-			sockPath = "/var/run/docker.sock"
-		}
+		sockPath = dockersock.Path()
 	} else {
 		sockPath = strings.TrimPrefix(sockPath, "unix://")
 	}
@@ -202,6 +199,12 @@ func handleStream(stream *yamux.Stream, sockPath string) {
 	}
 
 	dockerConn, err := net.Dial("unix", sockPath)
+	if err != nil {
+		// the engine may have moved (Podman socket activated later, rootless)
+		if alt := dockersock.Find(); alt != "" && alt != sockPath {
+			dockerConn, err = net.Dial("unix", alt)
+		}
+	}
 	if err != nil {
 		log.Printf("[agent] failed to dial local docker socket %s: %v", sockPath, err)
 		return

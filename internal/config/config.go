@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"ducktainer/internal/dockersock"
 )
 
 type Endpoint struct {
@@ -550,5 +552,5 @@ func defaultLocalURL() string {
 	if runtime.GOOS == "windows" {
 		return "npipe:////./pipe/docker_engine"
 	}
-	return "unix:///var/run/docker.sock"
+	return "unix://" + dockersock.Path()
 }

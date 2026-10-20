@@ -22,11 +22,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"ducktainer/internal/agent"
 	"ducktainer/internal/config"
+	"ducktainer/internal/dockersock"
 )
 
 type Client struct {
@@ -62,6 +64,13 @@ func New(ep config.Endpoint) (*Client, error) {
 		c.dial = func(ctx context.Context) (net.Conn, error) {
 			var d net.Dialer
 			conn, err := d.DialContext(ctx, "unix", path)
+			if errors.Is(err, os.ErrNotExist) {
+				// a saved default that no longer exists (Docker replaced by Podman)
+				if alt := dockersock.Find(); alt != "" && alt != path {
+					conn, err = d.DialContext(ctx, "unix", alt)
+					path = alt
+				}
+			}
 			if err != nil {
 				return nil, permissionHint(path, err)
 			}
