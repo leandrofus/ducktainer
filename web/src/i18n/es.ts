@@ -1500,4 +1500,8 @@ export const es: Record<string, string> = {
   "Only these users": "Solo estos usuarios",
   "Except these users": "Excepto estos usuarios",
   "Minutes between alerts of the same user": "Minutos entre alertas del mismo usuario",
+  "Server address, as the node will reach it": "Dirección del servidor, tal como la alcanzará el nodo",
+  "ducktainer listens only on 127.0.0.1, which no node can reach. Start it with --listen 0.0.0.0:9900 (and allow the node's network), or with --agent-listen :9901.": "ducktainer solo escucha en 127.0.0.1, que ningún nodo puede alcanzar. Arráncalo con --listen 0.0.0.0:9900 (y permite la red del nodo), o con --agent-listen :9901.",
+  "On the node, localhost is the node itself: use one of this server's addresses.": "En el nodo, localhost es el propio nodo: usa una de las direcciones de este servidor.",
+  "The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.": "El instalador comprueba antes el nodo (arquitectura, que alcanza este servidor, que el binario corre con su glibc) y no instala nada si una comprobación falla.",
 }

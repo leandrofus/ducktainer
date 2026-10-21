@@ -1508,4 +1508,8 @@ export const ru: Record<string, string> = {
   "Only these users": "Только эти пользователи",
   "Except these users": "Кроме этих пользователей",
   "Minutes between alerts of the same user": "Минут между оповещениями об одном пользователе",
+  "Server address, as the node will reach it": "Адрес сервера, по которому его достигнет узел",
+  "ducktainer listens only on 127.0.0.1, which no node can reach. Start it with --listen 0.0.0.0:9900 (and allow the node's network), or with --agent-listen :9901.": "ducktainer слушает только 127.0.0.1, недоступный узлам. Запустите его с --listen 0.0.0.0:9900 (и разрешите сеть узла) или с --agent-listen :9901.",
+  "On the node, localhost is the node itself: use one of this server's addresses.": "На узле localhost — это сам узел: используйте один из адресов этого сервера.",
+  "The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.": "Установщик сначала проверяет узел (архитектуру, доступность этого сервера, запуск бинарника с его glibc) и ничего не устанавливает, если проверка не пройдена.",
 }

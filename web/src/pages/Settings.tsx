@@ -17,18 +17,49 @@ interface AgentInstall {
   install: string
   manual: string
   tls: boolean
+  candidates: { url: string; label: string }[]
+  loopback_only: boolean
 }
 
-const agentInstall = (name: string) => api.get<AgentInstall>(`/endpoints/${enc(name)}/agent-install?server=${enc(window.location.origin)}`)
+const agentInstall = (name: string, server: string) => api.get<AgentInstall>(`/endpoints/${enc(name)}/agent-install?server=${enc(server)}`)
+
+/** The commands with an address the node can reach: the browser's, unless it is localhost. */
+async function agentInstallBest(name: string) {
+  const first = await agentInstall(name, window.location.origin)
+  if (isLoopbackURL(window.location.origin) && first.candidates.length) return agentInstall(name, first.candidates[0].url)
+  return first
+}
+
+const isLoopbackURL = (u: string) => {
+  try {
+    const h = new URL(u).hostname
+    return h === 'localhost' || h === '::1' || h === '[::1]' || h.startsWith('127.')
+  } catch {
+    return false
+  }
+}
 
 /** Enrollment commands for a saved agent host (token in a header, server key pinned). */
 function AgentCommands({ name }: { name: string }) {
   const [cmds, setCmds] = useState<AgentInstall | null>(null)
   const [err, setErr] = useState('')
+  // the address the node will use to reach this server: the browser's own address
+  // is useless when it is localhost, so the server's reachable ones are offered
+  const [server, setServer] = useState(window.location.origin)
+  const [picked, setPicked] = useState(false)
   useEffect(() => {
-    agentInstall(name).then(setCmds).catch((e) => setErr(e.message))
-  }, [name])
-  if (err) return <div className="alert alert-bad">{err}</div>
+    const h = setTimeout(() => {
+      agentInstall(name, server)
+        .then((c) => {
+          setCmds(c)
+          setErr('')
+          if (!picked && isLoopbackURL(server) && c.candidates.length) setServer(c.candidates[0].url)
+        })
+        .catch((e) => setErr(e.message))
+    }, 300)
+    return () => clearTimeout(h)
+  }, [name, server])
+  if (err && !cmds) return <div className="alert alert-bad">{err}</div>
   if (!cmds) return <Spinner />
   const box = (cmd: string) => (
     <div style={{ background: 'var(--bg-code, #18181b)', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border, #27272a)' }}>
@@ -37,6 +68,23 @@ function AgentCommands({ name }: { name: string }) {
   )
   return (
     <div style={{ marginTop: 12 }}>
+      <label className="field">
+        <span>{tr('Server address, as the node will reach it')}</span>
+        <input className="mono" list="agent-server-addrs" value={server} onChange={(e) => (setPicked(true), setServer(e.target.value.trim()))} />
+        <datalist id="agent-server-addrs">
+          {cmds.candidates.map((c) => <option key={c.url} value={c.url}>{c.label}</option>)}
+        </datalist>
+      </label>
+      {cmds.loopback_only && (
+        <div className="alert alert-warn" style={{ margin: '8px 0' }}>
+          {tr('ducktainer listens only on 127.0.0.1, which no node can reach. Start it with --listen 0.0.0.0:9900 (and allow the node\'s network), or with --agent-listen :9901.')}
+        </div>
+      )}
+      {!cmds.loopback_only && isLoopbackURL(server) && (
+        <div className="alert alert-warn" style={{ margin: '8px 0' }}>
+          {tr('On the node, localhost is the node itself: use one of this server\'s addresses.')}
+        </div>
+      )}
       <div className="row gap" style={{ marginBottom: 4 }}>
         <span className="small muted grow"><strong>{tr('Run this command on the remote node:')}</strong></span>
         <button type="button" className="btn btn-sm" onClick={() => { copy(cmds.install); toast.ok(tr('Command copied')) }}><ClipboardCopy size={13} /> {tr('Copy')}</button>
@@ -46,6 +94,7 @@ function AgentCommands({ name }: { name: string }) {
         <summary className="small muted" style={{ cursor: 'pointer' }}>{tr('Or standalone manual command (without script)')}</summary>
         <div style={{ marginTop: 4 }}>{box(cmds.manual)}</div>
       </details>
+      <p className="help">{tr('The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.')}</p>
       <p className="help">{cmds.tls
         ? tr('The commands pin this server\'s certificate: a node cannot be fed a different binary or server. The token only works for this host and is kept on the node in /etc/ducktainer-agent/agent.env (root only).')
         : tr('This server is not using TLS: the token and the binary travel in clear. Serve ducktainer with TLS (or use --agent-listen) before enrolling nodes over an untrusted network.')}</p>
@@ -184,7 +233,7 @@ function Hosts() {
     ...(e.url.startsWith('agent://') ? [{
       label: tr('Copy agent install command'),
       icon: <ClipboardCopy size={14} />,
-      onClick: () => agentInstall(e.name).then((c) => { copy(c.install); toast.ok(tr('Command copied')) }).catch(toast.err),
+      onClick: () => agentInstallBest(e.name).then((c) => { copy(c.install); toast.ok(tr('Command copied')) }).catch(toast.err),
     }] : []),
     'sep' as const,
     { label: tr('Delete…'), icon: <Trash2 size={14} />, danger: true, onClick: async () => {
