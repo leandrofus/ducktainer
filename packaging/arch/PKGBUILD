@@ -48,7 +48,7 @@ package() {
   install -Dm644 packaging/ducktainer.env "$pkgdir/etc/ducktainer/ducktainer.env"
   install -Dm644 packaging/pam/ducktainer.arch "$pkgdir/etc/pam.d/ducktainer"
   # the same install scripts as the rpm and deb packages (see ducktainer.install)
-  for s in postinstall preremove postremove; do
+  for s in postinstall preremove; do
     install -Dm755 "packaging/scripts/$s.sh" "$pkgdir/usr/share/ducktainer/$s.sh"
   done
 }
