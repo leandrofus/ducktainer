@@ -21,6 +21,8 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/endpoints", s.admin(s.saveEndpoint))
 	mux.HandleFunc("DELETE /api/endpoints/{name}", s.admin(s.deleteEndpoint))
 	mux.HandleFunc("GET /api/endpoints/{name}/agent-install", s.admin(s.agentInstall))
+	mux.HandleFunc("GET /api/registry/tags", s.admin(s.registryTags))
+	mux.HandleFunc("GET /api/registry/search", s.admin(s.registrySearch))
 	mux.HandleFunc("GET /api/registries", s.admin(s.listRegistries))
 	mux.HandleFunc("POST /api/registries", s.admin(s.saveRegistry))
 	mux.HandleFunc("DELETE /api/registries/{name}", s.admin(s.deleteRegistry))
@@ -42,6 +44,13 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/cloudflare", s.admin(s.cloudflareInfo))
 	mux.HandleFunc("PUT /api/cloudflare", s.admin(s.connectCloudflare))
 	mux.HandleFunc("DELETE /api/cloudflare", s.admin(s.disconnectCloudflare))
+	mux.HandleFunc("GET /api/alerts", s.auth(s.alertsStatus))
+	mux.HandleFunc("GET /api/alerts/config", s.admin(s.alertsConfig))
+	mux.HandleFunc("POST /api/alerts/rules", s.admin(s.saveAlertRule))
+	mux.HandleFunc("DELETE /api/alerts/rules/{id}", s.admin(s.deleteAlertRule))
+	mux.HandleFunc("POST /api/alerts/channels", s.admin(s.saveAlertChannel))
+	mux.HandleFunc("DELETE /api/alerts/channels/{id}", s.admin(s.deleteAlertChannel))
+	mux.HandleFunc("POST /api/alerts/test", s.admin(s.testAlertChannel))
 
 	e := func(pattern string, h http.HandlerFunc) {
 		method, path, _ := cut(pattern)

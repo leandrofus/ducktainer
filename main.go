@@ -3,6 +3,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -311,6 +312,7 @@ func cmdServe(args []string, openBrowser bool) error {
 	srv.StartExposures()
 	defer srv.StopExposures()
 	srv.StartShortcuts()
+	srv.StartAlerts()
 	scheme := "http"
 	if tc != nil {
 		scheme = "https"
@@ -871,7 +873,8 @@ func cmdInstall(args []string) error {
 	if err != nil {
 		return err
 	}
-	bin := "/usr/local/bin/ducktainer"
+	// same layout as the rpm/deb packages
+	const bin = "/usr/bin/ducktainer"
 	if self != bin {
 		data, err := os.ReadFile(self)
 		if err != nil {
@@ -884,7 +887,7 @@ func cmdInstall(args []string) error {
 			return err
 		}
 	}
-	write := func(src, dst string, mode os.FileMode, keep bool) error {
+	write := func(src, dst string, keep bool) error {
 		if keep {
 			if _, err := os.Stat(dst); err == nil {
 				return nil
@@ -894,27 +897,39 @@ func cmdInstall(args []string) error {
 		if err != nil {
 			return err
 		}
-		data = []byte(strings.ReplaceAll(string(data), "/usr/bin/ducktainer", bin))
 		os.MkdirAll(filepath.Dir(dst), 0o755)
-		return os.WriteFile(dst, data, mode)
+		return os.WriteFile(dst, data, 0o644)
 	}
 	for _, u := range []string{"ducktainer.service", "ducktainer-pam.socket", "ducktainer-pam@.service"} {
-		if err := write("systemd/"+u, "/etc/systemd/system/"+u, 0o644, false); err != nil {
+		if err := write("systemd/"+u, "/usr/lib/systemd/system/"+u, false); err != nil {
 			return err
 		}
+		// copies from earlier versions in /etc would shadow the ones above
+		os.Remove("/etc/systemd/system/" + u)
 	}
+	// the old location of the binary
+	os.Remove("/usr/local/bin/ducktainer")
 	pamSrc := "pam/ducktainer.debian"
 	if _, err := os.Stat("/etc/pam.d/password-auth"); err == nil {
 		pamSrc = "pam/ducktainer.redhat"
 	}
-	if err := write(pamSrc, "/etc/pam.d/ducktainer", 0o644, true); err != nil {
+	if err := write(pamSrc, "/etc/pam.d/ducktainer", true); err != nil {
 		return err
 	}
 	if _, err := os.Stat("/etc/ducktainer/ducktainer.env"); os.IsNotExist(err) {
-		os.MkdirAll("/etc/ducktainer", 0o755)
-		env := fmt.Sprintf("# `ducktainer serve` options\nDUCKTAINER_OPTS=%q\n", strings.Join(args, " "))
-		if err := os.WriteFile("/etc/ducktainer/ducktainer.env", []byte(env), 0o644); err != nil {
+		if err := write("ducktainer.env", "/etc/ducktainer/ducktainer.env", true); err != nil {
 			return err
+		}
+		if len(args) > 0 {
+			env, err := os.OpenFile("/etc/ducktainer/ducktainer.env", os.O_APPEND|os.O_WRONLY, 0)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintf(env, "DUCKTAINER_OPTS=%q\n", strings.Join(args, " "))
+			env.Close()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	script, err := fs.ReadFile(packaging.Files, "scripts/postinstall.sh")
@@ -922,7 +937,7 @@ func cmdInstall(args []string) error {
 		return err
 	}
 	cmd := exec.Command("/bin/sh", "-s", "1")
-	cmd.Stdin = strings.NewReader(strings.ReplaceAll(string(script), "/usr/bin/ducktainer", bin))
+	cmd.Stdin = bytes.NewReader(script)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
 		return i18n.Errorf("post-install: %v", err)

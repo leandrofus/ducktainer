@@ -581,7 +581,7 @@ export function ServiceRecord({ ep, id, tab = 'tasks' }: { ep: string; id: strin
           ]} />
           <div className="tab-body">
             {tab === 'tasks' && <TaskTable ep={ep} tasks={data.tasks} show="service" />}
-            {tab === 'logs' && <LogViewer path={`/e/${enc(ep)}/services/${enc(sv.ID)}/logs`} height="calc(100vh - 290px)" />}
+            {tab === 'logs' && <LogViewer alert={{ ep, container: () => `${sv.Spec.Name}.*` }} path={`/e/${enc(ep)}/services/${enc(sv.ID)}/logs`} height="calc(100vh - 290px)" />}
             {tab === 'spec' && (isViewer() ? <JsonView value={sv.Spec} /> : <SpecEditor ep={ep} sv={sv} />)}
             {tab === 'inspect' && <JsonView value={sv} />}
           </div>

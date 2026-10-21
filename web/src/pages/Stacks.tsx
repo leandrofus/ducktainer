@@ -423,7 +423,7 @@ export function StackRecord({ ep, name, tab = 'services' }: { ep: string; name: 
               />
             )}
             {tab === 'compose' && <ComposeEditor ep={ep} stack={s} files={data.files} filesError={data.files_error} />}
-            {tab === 'logs' && (s.total > 0 ? <LogViewer path={`/e/${enc(ep)}/stacks/${enc(name)}/logs`} multi height="calc(100vh - 290px)" /> : <Empty title={tr('The stack has no containers')} />)}
+            {tab === 'logs' && (s.total > 0 ? <LogViewer alert={{ ep, container: (svc) => (svc ? `${name}?${svc}?*` : `${name}?*`) }} path={`/e/${enc(ep)}/stacks/${enc(name)}/logs`} multi height="calc(100vh - 290px)" /> : <Empty title={tr('The stack has no containers')} />)}
           </div>
         </main>
       </div>

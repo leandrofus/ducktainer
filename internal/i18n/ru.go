@@ -3,6 +3,7 @@ package i18n
 // ru is the Russian catalog: English format -> Russian format.
 // Keep keys identical to the English strings in the code.
 var ru = map[string]string{
+	"enter the image":                "укажите образ",
 	"\n  Docker API exposed on %s\n": "\n  API Docker опубликован на %s\n",
 	"\n  From another ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n": "\n  С другого ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n",
 	"\nmode:    %s\n":                                        "\nрежим:   %s\n",
@@ -347,4 +348,15 @@ var ru = map[string]string{
 	"on Windows the service is installed by the MSI package (ducktainer-<version>-x64.msi, on the releases page)": "в Windows службу устанавливает пакет MSI (ducktainer-<версия>-x64.msi на странице релизов)",
 	"`ducktainer engine relay` only runs on Windows":                                                              "`ducktainer engine relay` работает только в Windows",
 	"Windows accounts (LogonUser)":                                                                                "учётные записи Windows (LogonUser)",
+	"enter the SMTP server and at least one recipient":                                                            "укажите SMTP-сервер и хотя бы одного получателя",
+	"unknown channel type":                                                                                        "неизвестный тип канала",
+	"enter a valid http(s) URL":                                                                                   "укажите корректный URL http(s)",
+	"enter a name for the channel":                                                                                "укажите название канала",
+	"enter a name for the rule":                                                                                   "укажите название правила",
+	"enter a valid sender address":                                                                                "укажите корректный адрес отправителя",
+	"unknown rule type":                                                                                           "неизвестный тип правила",
+	"invalid regular expression: %v":                                                                              "некорректное регулярное выражение: %v",
+	"enter the regular expression":                                                                                "укажите регулярное выражение",
+	"enter a method or a path for the audit event":                                                                "укажите метод или путь для события аудита",
+	"choose the audit event":                                                                                      "выберите событие аудита",
 }

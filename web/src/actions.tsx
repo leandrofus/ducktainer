@@ -15,6 +15,7 @@ import type { Container, Image, Network, Service, Stack, SwarmNode, SwarmObject,
 import type { MenuEntry } from './ui/ContextMenu'
 import { confirm, openDialog, prompt, runJob, toast } from './ui/overlays'
 import { ContainerFormDialog } from './components/ContainerForm'
+import { askImage } from './components/ImagePicker'
 import { LocationDialog } from './pages/Stacks'
 import { setPref, getPref } from './lib/prefs'
 
@@ -111,10 +112,17 @@ export function containerActions(ep: string, c: Container, opts: { preview?: () 
       label: tr('Update image and recreate'),
       icon: <ArrowUpCircle size={I} />,
       onClick: async () => {
-        if (!(await confirm({ title: tr('Update {0}', name), body: tr('The latest version of {0} will be pulled and the container recreated, keeping its configuration and volumes.', c.Image), confirm: tr('Update') }))) return
         try {
           const spec = await api.get(`${base}/spec`)
-          await runJob(tr('Update {0}', name), 'POST', `${base}/recreate`, { spec, pull: true })
+          const image = await askImage({
+            ep,
+            title: tr('Update {0}', name),
+            value: spec.image || c.Image,
+            confirm: tr('Update'),
+            help: tr('This image and tag will be pulled and the container recreated, keeping its configuration and volumes. Change the tag to move to another version.'),
+          })
+          if (!image) return
+          await runJob(tr('Update {0}', name), 'POST', `${base}/recreate`, { spec: { ...spec, image }, pull: true })
         } catch (e) {
           toast.err(e)
         }

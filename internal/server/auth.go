@@ -333,11 +333,15 @@ type auditEntry struct {
 type auditLog struct {
 	mu   sync.Mutex
 	path string
+	hook func(auditEntry) // the alert engine, when running
 }
 
 func newAuditLog(path string) *auditLog { return &auditLog{path: path} }
 
 func (a *auditLog) write(e auditEntry) {
+	if a.hook != nil {
+		go a.hook(e)
+	}
 	log.Printf("audit user=%s role=%s ip=%s %s %s -> %d %s", e.User, e.Role, e.IP, e.Method, e.Path, e.Status, e.Note)
 	data, _ := json.Marshal(e)
 	a.mu.Lock()

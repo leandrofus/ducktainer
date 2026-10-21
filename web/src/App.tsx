@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Home as HomeIcon, Box, Layers, Image as ImageIcon, Network as NetIcon, HardDrive, Store, Activity as ActIcon, Settings as Cog,
   Search, Plus, ChevronsUpDown, Zap, Languages, Star, Clock, LogOut, Moon, Sun, Server, Check, Download, PanelLeftClose, PanelLeft, Rocket,
-  Boxes, KeyRound, FileText, Network as ClusterIcon,
+  Boxes, KeyRound, FileText, Network as ClusterIcon, Bell,
 } from 'lucide-react'
 import { api, enc, setUnauthorizedHandler, stream } from './lib/api'
 import type { Container, Endpoint, Image, Network, Service, Stack, SwarmNode, SwarmStack, Volume } from './lib/types'
@@ -21,6 +21,7 @@ import { containerActions, imageActions, networkActions, stackActions, volumeAct
 import type { Fav } from './actions'
 import { ContainerFormDialog } from './components/ContainerForm'
 import { Home, Activity } from './pages/Home'
+import { Alerts } from './pages/Alerts'
 import { Containers } from './pages/Containers'
 import { Jump } from './pages/Jump'
 import { ContainerRecord } from './pages/ContainerRecord'
@@ -62,6 +63,7 @@ const SWARM_NAV = [
 const NAV2 = [
   { id: 'marketplace', label: 'Marketplace', icon: Store },
   { id: 'activity', label: tr('Activity'), icon: ActIcon },
+  { id: 'alerts', label: tr('Alerts'), icon: Bell },
   { id: 'settings', label: tr('Settings'), icon: Cog },
 ] as const
 
@@ -603,6 +605,9 @@ function Shell() {
       break
     case 'activity':
       page = <Activity ep={ep} />
+      break
+    case 'alerts':
+      page = <Alerts tab={id} />
       break
     case 'settings':
       page = <Settings ep={ep} tab={id} />
