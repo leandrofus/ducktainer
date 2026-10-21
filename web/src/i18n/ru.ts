@@ -802,7 +802,7 @@ export const ru: Record<string, string> = {
   "The containers will be taken down (the project files are not touched).": "Контейнеры будут остановлены и удалены (файлы проекта не затрагиваются).",
   "The containers will be taken down and the stack files stored in ducktainer deleted.": "Контейнеры будут остановлены и удалены, а файлы стека, сохранённые в ducktainer, будут удалены.",
   "The data will be lost permanently.": "Данные будут безвозвратно потеряны.",
-  "The latest version of {0} will be pulled and the container recreated, keeping its configuration and volumes.": "Будет загружена последняя версия {0}, контейнер будет пересоздан с сохранением его конфигурации и томов.",
+  "This image and tag will be pulled and the container recreated, keeping its configuration and volumes. Change the tag to move to another version.": "Будет загружен этот образ с тегом, а контейнер пересоздан с сохранением конфигурации и томов. Измените тег, чтобы перейти на другую версию.",
   "The merged result will be written to {0} and {1} will be set aside (.ducktainer-bak copies of every original are kept). {VARIABLES} are kept, but comments and formatting are lost. Containers are not recreated: the resulting configuration is the same.": "Объединённый результат будет записан в {0}, а {1} будет отложен (копии всех исходных файлов сохраняются с суффиксом .ducktainer-bak). {VARIABLES} сохраняются, но комментарии и форматирование теряются. Контейнеры не пересоздаются: итоговая конфигурация та же.",
   "the service must be a YAML map": "сервис должен быть YAML-словарём",
   "The service runs as uid": "Сервис работает от uid",

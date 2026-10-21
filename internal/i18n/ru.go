@@ -3,6 +3,7 @@ package i18n
 // ru is the Russian catalog: English format -> Russian format.
 // Keep keys identical to the English strings in the code.
 var ru = map[string]string{
+	"enter the image":                "укажите образ",
 	"\n  Docker API exposed on %s\n": "\n  API Docker опубликован на %s\n",
 	"\n  From another ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n": "\n  С другого ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n",
 	"\nmode:    %s\n":                                        "\nрежим:   %s\n",

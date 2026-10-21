@@ -802,7 +802,7 @@ export const es: Record<string, string> = {
   "The containers will be taken down (the project files are not touched).": "Se bajarán los contenedores (los archivos del proyecto no se tocan).",
   "The containers will be taken down and the stack files stored in ducktainer deleted.": "Se bajarán los contenedores y se borrarán los archivos del stack guardados en ducktainer.",
   "The data will be lost permanently.": "Los datos se perderán definitivamente.",
-  "The latest version of {0} will be pulled and the container recreated, keeping its configuration and volumes.": "Se descargará la última versión de {0} y se recreará el contenedor conservando su configuración y volúmenes.",
+  "This image and tag will be pulled and the container recreated, keeping its configuration and volumes. Change the tag to move to another version.": "Se descargará esta imagen y etiqueta y se recreará el contenedor conservando su configuración y volúmenes. Cambia la etiqueta para pasar a otra versión.",
   "The merged result will be written to {0} and {1} will be set aside (.ducktainer-bak copies of every original are kept). {VARIABLES} are kept, but comments and formatting are lost. Containers are not recreated: the resulting configuration is the same.": "Se escribirá el resultado combinado en {0} y se apartarán {1} (quedan copias .ducktainer-bak de todos los originales). Las {VARIABLES} se conservan, pero se pierden los comentarios y el formato. Los contenedores no se recrean: la configuración resultante es la misma.",
   "the service must be a YAML map": "el servicio debe ser un mapa YAML",
   "The service runs as uid": "El servicio corre como uid",

@@ -3,6 +3,7 @@ package i18n
 // es is the Spanish catalog: English format -> Spanish format.
 // Keep keys identical to the English strings in the code.
 var es = map[string]string{
+	"enter the image": "introduce la imagen",
 	"not an IP address or resolvable hostname: %s":                                           "no es una dirección IP ni un nombre de host resoluble: %s",
 	"\n  Docker API exposed on %s\n":                                                         "\n  API de Docker expuesta en %s\n",
 	"\n  From another ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n": "\n  Desde otro ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n",
