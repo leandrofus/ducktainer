@@ -152,7 +152,7 @@ export function ContainerSummary({ ep, id, onClose }: { ep: string; id: string; 
         ]}
       />
       <div className="summary-logs">
-        <LogViewer path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="320px" />
+        <LogViewer alert={{ ep, container: () => cname(c) }} path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="320px" />
       </div>
     </div>
   )
@@ -357,7 +357,7 @@ export function ContainerRecord({ ep, id, tab = 'overview', query }: { ep: strin
                 <div className="overview-grid">
                   <div className="panel">
                     <h4>{tr('Latest logs')}</h4>
-                    <LogViewer path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="360px" />
+                    <LogViewer alert={{ ep, container: () => cname(c) }} path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="360px" />
                   </div>
                   <div className="panel">
                     <h4><Clock size={14} /> {tr('Activity')}</h4>
@@ -366,7 +366,7 @@ export function ContainerRecord({ ep, id, tab = 'overview', query }: { ep: strin
                 </div>
               </div>
             )}
-            {tab === 'logs' && <LogViewer path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="calc(100vh - 290px)" />}
+            {tab === 'logs' && <LogViewer alert={{ ep, container: () => cname(c) }} path={`/e/${enc(ep)}/containers/${enc(c.Id)}/logs`} height="calc(100vh - 290px)" />}
             {tab === 'terminal' && <TerminalView ep={ep} id={c.Id} disabled={!running} />}
             {tab === 'files' && <FileBrowser ep={ep} id={c.Id} initial={query.get('path') || inspect?.Config?.WorkingDir || '/'} />}
             {tab === 'stats' && (running ? <><StatTiles samples={samples} /><p className="muted small">{tr('Live samples from the last ~2 minutes.')}</p></> : <Empty title={tr('The container is not running')} />)}

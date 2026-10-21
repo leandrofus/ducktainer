@@ -52,6 +52,7 @@ type Server struct {
 	audit   *auditLog
 	tunnels tunnels
 	expo    exposures
+	alerts  *alerter
 }
 
 func New(cfg *config.Config, acl *access.List, ui fs.FS) *Server {

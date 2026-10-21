@@ -144,6 +144,51 @@ type Shortcuts struct {
 	Items []ShortcutRef `json:"items,omitempty"`
 }
 
+// AlertChannel is where alerts are sent: a webhook (JSON POST) or an SMTP
+// server. The webhook URL (often carries a secret) and the SMTP password are
+// sealed on disk.
+type AlertChannel struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Kind string `json:"kind"` // webhook | email
+	URL  string `json:"url,omitempty"`
+	// email
+	Host     string   `json:"host,omitempty"`
+	Port     int      `json:"port,omitempty"`
+	Security string   `json:"security,omitempty"` // starttls | tls | none
+	Username string   `json:"username,omitempty"`
+	Password string   `json:"password,omitempty"`
+	From     string   `json:"from,omitempty"`
+	To       []string `json:"to,omitempty"`
+}
+
+// AlertRule watches something and fires into its channels.
+type AlertRule struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Kind    string `json:"kind"` // host_down | agent_offline | log_match | swarm_node | swarm_service
+	Enabled bool   `json:"enabled"`
+	// Endpoints limits the hosts watched (empty: all).
+	Endpoints []string `json:"endpoints,omitempty"`
+	// Containers (log_match, swarm_service): name globs such as "web-*" (empty: all).
+	Containers []string `json:"containers,omitempty"`
+	// Patterns (log_match) are regular expressions: a log line alerts when
+	// any matches and no Exclude does.
+	Patterns []string `json:"patterns,omitempty"`
+	Exclude  []string `json:"exclude,omitempty"`
+	// ForSeconds (host_down, agent_offline): how long it must stay down before firing.
+	ForSeconds int `json:"for_seconds,omitempty"`
+	// CooldownMinutes (log_match): minimum time between alerts of the same container.
+	CooldownMinutes int `json:"cooldown_minutes,omitempty"`
+	// Channels receiving it (empty: all).
+	Channels []string `json:"channels,omitempty"`
+}
+
+type Alerts struct {
+	Channels []AlertChannel `json:"channels,omitempty"`
+	Rules    []AlertRule    `json:"rules,omitempty"`
+}
+
 type TemplateSource struct {
 	Name    string `json:"name"`
 	URL     string `json:"url"`
@@ -205,6 +250,7 @@ type Config struct {
 	Exposures     []Exposure       `json:"exposures,omitempty"`
 	Shortcuts     *Shortcuts       `json:"shortcuts,omitempty"`
 	Forwards      []Forward        `json:"forwards,omitempty"`
+	Alerts        *Alerts          `json:"alerts,omitempty"`
 
 	mu       sync.Mutex
 	path     string
@@ -332,6 +378,17 @@ func (c *Config) decode(data []byte) error {
 			return err
 		}
 	}
+	if al := o.Alerts; al != nil {
+		for i := range al.Channels {
+			if al.Channels[i].URL, err = open(al.Channels[i].URL); err != nil {
+				return err
+			}
+			if al.Channels[i].Password, err = open(al.Channels[i].Password); err != nil {
+				return err
+			}
+		}
+	}
+	c.Alerts = o.Alerts
 	c.TokenHash, c.SessionSecret, c.Auth = o.TokenHash, o.SessionSecret, o.Auth
 	c.Cloudflare, c.Exposures, c.Shortcuts, c.Forwards = o.Cloudflare, o.Exposures, o.Shortcuts, o.Forwards
 	c.Allow, c.Endpoints, c.Registry, c.Templates = o.Allow, o.Endpoints, o.Registry, o.Templates
@@ -404,6 +461,16 @@ func (c *Config) save() error {
 	for i := range disk.Exposures {
 		if disk.Exposures[i].Access.LinkKey, err = seal(c.key, disk.Exposures[i].Access.LinkKey); err != nil {
 			return err
+		}
+	}
+	if disk.Alerts != nil {
+		for i := range disk.Alerts.Channels {
+			if disk.Alerts.Channels[i].URL, err = seal(c.key, disk.Alerts.Channels[i].URL); err != nil {
+				return err
+			}
+			if disk.Alerts.Channels[i].Password, err = seal(c.key, disk.Alerts.Channels[i].Password); err != nil {
+				return err
+			}
 		}
 	}
 	data, err := json.MarshalIndent(disk, "", "  ")
@@ -519,7 +586,24 @@ func (c *Config) clone() *Config {
 	if c.Shortcuts != nil {
 		sc = &Shortcuts{All: c.Shortcuts.All, Items: append([]ShortcutRef(nil), c.Shortcuts.Items...)}
 	}
+	var al *Alerts
+	if c.Alerts != nil {
+		al = &Alerts{Channels: make([]AlertChannel, len(c.Alerts.Channels)), Rules: make([]AlertRule, len(c.Alerts.Rules))}
+		for i, ch := range c.Alerts.Channels {
+			ch.To = append([]string(nil), ch.To...)
+			al.Channels[i] = ch
+		}
+		for i, r := range c.Alerts.Rules {
+			r.Endpoints = append([]string(nil), r.Endpoints...)
+			r.Containers = append([]string(nil), r.Containers...)
+			r.Patterns = append([]string(nil), r.Patterns...)
+			r.Exclude = append([]string(nil), r.Exclude...)
+			r.Channels = append([]string(nil), r.Channels...)
+			al.Rules[i] = r
+		}
+	}
 	return &Config{
+		Alerts:        al,
 		Forwards:      append([]Forward(nil), c.Forwards...),
 		Shortcuts:     sc,
 		Cloudflare:    cf,

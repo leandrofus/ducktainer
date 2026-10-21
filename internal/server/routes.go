@@ -42,6 +42,13 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/cloudflare", s.admin(s.cloudflareInfo))
 	mux.HandleFunc("PUT /api/cloudflare", s.admin(s.connectCloudflare))
 	mux.HandleFunc("DELETE /api/cloudflare", s.admin(s.disconnectCloudflare))
+	mux.HandleFunc("GET /api/alerts", s.auth(s.alertsStatus))
+	mux.HandleFunc("GET /api/alerts/config", s.admin(s.alertsConfig))
+	mux.HandleFunc("POST /api/alerts/rules", s.admin(s.saveAlertRule))
+	mux.HandleFunc("DELETE /api/alerts/rules/{id}", s.admin(s.deleteAlertRule))
+	mux.HandleFunc("POST /api/alerts/channels", s.admin(s.saveAlertChannel))
+	mux.HandleFunc("DELETE /api/alerts/channels/{id}", s.admin(s.deleteAlertChannel))
+	mux.HandleFunc("POST /api/alerts/test", s.admin(s.testAlertChannel))
 
 	e := func(pattern string, h http.HandlerFunc) {
 		method, path, _ := cut(pattern)
