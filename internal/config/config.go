@@ -166,11 +166,11 @@ type AlertChannel struct {
 type AlertRule struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
-	Kind    string `json:"kind"` // host_down | agent_offline | log_match
+	Kind    string `json:"kind"` // host_down | agent_offline | log_match | swarm_node | swarm_service
 	Enabled bool   `json:"enabled"`
 	// Endpoints limits the hosts watched (empty: all).
 	Endpoints []string `json:"endpoints,omitempty"`
-	// Containers (log_match): name globs such as "web-*" (empty: all).
+	// Containers (log_match, swarm_service): name globs such as "web-*" (empty: all).
 	Containers []string `json:"containers,omitempty"`
 	// Patterns (log_match) are regular expressions: a log line alerts when
 	// any matches and no Exclude does.

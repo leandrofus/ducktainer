@@ -1482,4 +1482,7 @@ export const ru: Record<string, string> = {
   "Regular expressions (one per line)": "Регулярные выражения (по одному в строке)",
   "Exclusions (one per line)": "Исключения (по одному в строке)",
   "A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.": "Строка лога вызывает оповещение, если подходит любое из выражений и не подходит ни одно исключение. Начните выражение с (?i), чтобы игнорировать регистр.",
+  "Swarm node down": "Узел swarm недоступен",
+  "Swarm service degraded": "Сервис swarm деградирован",
+  "Pick manager hosts: each cluster is read through the first manager that answers. A service alerts when fewer tasks run than wanted, with the reason their tasks report.": "Выберите узлы-менеджеры: каждый кластер читается через первый ответивший менеджер. Сервис вызывает оповещение, когда запущено меньше задач, чем нужно, с причиной, которую сообщают задачи.",
 }

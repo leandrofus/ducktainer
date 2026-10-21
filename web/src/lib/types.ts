@@ -374,7 +374,7 @@ export interface SwarmStack {
 export interface AlertRule {
   id: string
   name: string
-  kind: 'host_down' | 'agent_offline' | 'log_match'
+  kind: 'host_down' | 'agent_offline' | 'log_match' | 'swarm_node' | 'swarm_service'
   enabled: boolean
   endpoints?: string[]
   containers?: string[]

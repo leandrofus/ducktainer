@@ -57,11 +57,14 @@ func (s *Server) saveAlertRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch rule.Kind {
-	case "host_down", "agent_offline":
+	case "host_down", "agent_offline", "swarm_node", "swarm_service":
 		if rule.ForSeconds < 0 {
 			rule.ForSeconds = 0
 		}
-		rule.Patterns, rule.Exclude, rule.Containers, rule.CooldownMinutes = nil, nil, nil, 0
+		rule.Patterns, rule.Exclude, rule.CooldownMinutes = nil, nil, 0
+		if rule.Kind != "swarm_service" {
+			rule.Containers = nil // only service rules filter by name
+		}
 	case "log_match":
 		var err error
 		if rule.Patterns, err = cleanPatterns(rule.Patterns); err != nil {

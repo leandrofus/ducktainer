@@ -14,6 +14,8 @@ const KIND_LABEL: Record<string, string> = {
   host_down: tr('Host down'),
   agent_offline: tr('Agent offline'),
   log_match: tr('Log pattern'),
+  swarm_node: tr('Swarm node down'),
+  swarm_service: tr('Swarm service degraded'),
 }
 
 const ERROR_PATTERN = '(?i)\\b(error|fatal|panic|exception|traceback|critical)\\b'
@@ -28,13 +30,13 @@ function ago(iso: string) {
   return `${Math.round(s / 86400)} d`
 }
 
-function HostPicker({ value, onChange, hosts, all }: { value: string[]; onChange: (v: string[]) => void; hosts: string[]; all: string }) {
+function HostPicker({ value, onChange, hosts, all, labels }: { value: string[]; onChange: (v: string[]) => void; hosts: string[]; all: string; labels?: Record<string, string> }) {
   return (
     <div className="row gap wrap">
       <label className="check"><input type="checkbox" checked={value.length === 0} onChange={(e) => e.target.checked && onChange([])} /> {all}</label>
       {hosts.map((h) => (
         <label key={h} className="check">
-          <input type="checkbox" checked={value.includes(h)} onChange={(e) => onChange(e.target.checked ? [...value, h] : value.filter((x) => x !== h))} /> {h}
+          <input type="checkbox" checked={value.includes(h)} onChange={(e) => onChange(e.target.checked ? [...value, h] : value.filter((x) => x !== h))} /> {labels?.[h] ?? h}
         </label>
       ))}
     </div>
@@ -126,17 +128,32 @@ function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => 
           <p className="help">{tr('Container names accept * and ? (empty: all containers).')}</p>
         </>
       ) : (
+        <>
+        {f.kind === 'swarm_service' && (
+          <label className="field" style={{ marginTop: 12 }}>
+            <span>{tr('Services')}</span>
+            <input
+              value={(f.containers || []).join(', ')}
+              placeholder="web_*, db"
+              onChange={(e) => set({ containers: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })}
+            />
+          </label>
+        )}
+        {(f.kind === 'swarm_node' || f.kind === 'swarm_service') && (
+          <p className="help">{tr('Pick manager hosts: each cluster is read through the first manager that answers. A service alerts when fewer tasks run than wanted, with the reason their tasks report.')}</p>
+        )}
         <label className="field" style={{ marginTop: 12 }}>
           <span>{tr('Seconds it must stay down before alerting')}</span>
           <input type="number" min={0} value={f.for_seconds ?? 60} onChange={(e) => set({ for_seconds: Number(e.target.value) })} />
         </label>
+        </>
       )}
       <div className="field" style={{ marginTop: 12 }}>
         <span>{tr('Send to')}</span>
         {channels.length === 0 ? (
           <p className="help">{tr('No channels yet: add one in the Channels tab. Until then alerts only appear here and in the service log.')}</p>
         ) : (
-          <HostPicker value={f.channels || []} onChange={(c) => set({ channels: c })} hosts={channels.map((c) => c.id)} all={tr('All')} />
+          <HostPicker value={f.channels || []} onChange={(c) => set({ channels: c })} hosts={channels.map((c) => c.id)} all={tr('All')} labels={Object.fromEntries(channels.map((c) => [c.id, c.name]))} />
         )}
       </div>
     </Modal>

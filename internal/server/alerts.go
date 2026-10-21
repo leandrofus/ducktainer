@@ -183,6 +183,11 @@ func (a *alerter) ruleList() []compiledRule {
 
 // ---- hosts and agents ----
 
+// stateKinds are the rules whose alerts stay active until resolved.
+func stateKind(k string) bool {
+	return k == "host_down" || k == "agent_offline" || k == "swarm_node" || k == "swarm_service"
+}
+
 func (a *alerter) checkHosts() {
 	rules := a.ruleList()
 	eps := a.s.Cfg.Snapshot().Endpoints
@@ -198,16 +203,22 @@ func (a *alerter) checkHosts() {
 			key := r.ID + "|" + ep.Name
 			live[key] = true
 			ok, why := a.endpointUp(ep)
-			a.track(r, ep.Name, key, ok, why)
+			problem := ep.Name + " is unreachable"
+			if r.Kind == "agent_offline" {
+				problem = ep.Name + " agent is offline"
+			}
+			if why != "" {
+				problem += ": " + why
+			}
+			a.track(r, ep.Name, key, ep.Name, ok, problem)
 		}
 	}
+	a.checkSwarm(rules, eps, live)
 	// state of rules (or hosts) that no longer exist
 	a.mu.Lock()
-	var gone []*Alert
 	for key, al := range a.active {
-		if (al.Kind == "host_down" || al.Kind == "agent_offline") && !live[key] {
-			gone = append(gone, al)
-			delete(a.active, key)
+		if stateKind(al.Kind) && !live[key] {
+			delete(a.active, key) // removing a rule or host does not announce a recovery
 		}
 	}
 	for key := range a.downAt {
@@ -216,7 +227,6 @@ func (a *alerter) checkHosts() {
 		}
 	}
 	a.mu.Unlock()
-	_ = gone // removing a rule or host does not announce a recovery
 }
 
 func (a *alerter) endpointUp(ep config.Endpoint) (bool, string) {
@@ -238,7 +248,9 @@ func (a *alerter) endpointUp(ep config.Endpoint) (bool, string) {
 	return true, ""
 }
 
-func (a *alerter) track(r compiledRule, endpoint, key string, up bool, why string) {
+// track moves one watched thing between up and down: it fires once it has
+// been down for the rule's grace period and resolves when it is back.
+func (a *alerter) track(r compiledRule, endpoint, key, subject string, up bool, problem string) {
 	a.mu.Lock()
 	al := a.active[key]
 	if up {
@@ -250,7 +262,7 @@ func (a *alerter) track(r compiledRule, endpoint, key string, up bool, why strin
 		if al != nil {
 			now := time.Now()
 			al.Resolved = &now
-			al.Message = fmt.Sprintf("%s is back (down for %s)", endpoint, now.Sub(al.Since).Round(time.Second))
+			al.Message = fmt.Sprintf("%s recovered (after %s)", subject, now.Sub(al.Since).Round(time.Second))
 			a.emit("resolved", r.AlertRule, al)
 		}
 		return
@@ -262,18 +274,13 @@ func (a *alerter) track(r compiledRule, endpoint, key string, up bool, why strin
 	}
 	wait := time.Duration(r.ForSeconds) * time.Second
 	if al != nil || time.Since(first) < wait {
+		if al != nil && al.Message != problem {
+			al.Message = problem // the reason changed: keep the list fresh without re-sending
+		}
 		a.mu.Unlock()
 		return
 	}
-	what := "is unreachable"
-	if r.Kind == "agent_offline" {
-		what = "agent is offline"
-	}
-	msg := fmt.Sprintf("%s %s", endpoint, what)
-	if why != "" {
-		msg += ": " + why
-	}
-	al = &Alert{Key: key, RuleID: r.ID, Rule: r.Name, Kind: r.Kind, Endpoint: endpoint, Message: msg, Since: first}
+	al = &Alert{Key: key, RuleID: r.ID, Rule: r.Name, Kind: r.Kind, Endpoint: endpoint, Message: problem, Since: first}
 	a.active[key] = al
 	a.mu.Unlock()
 	a.emit("firing", r.AlertRule, al)

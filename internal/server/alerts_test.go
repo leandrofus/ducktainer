@@ -116,21 +116,21 @@ func TestHostDownFiresAfterGraceAndResolves(t *testing.T) {
 	a := alertTestServer(t, []config.AlertRule{{ID: "r1", Name: "down", Kind: "host_down", Enabled: true, ForSeconds: 60}}, url)
 	r := a.ruleList()[0]
 
-	a.track(r, "srv", "r1|srv", false, "refused")
+	a.track(r, "srv", "r1|srv", "srv", false, "srv is unreachable: refused")
 	h.none(t) // still inside the grace period
 	a.mu.Lock()
 	a.downAt["r1|srv"] = time.Now().Add(-2 * time.Minute)
 	a.mu.Unlock()
-	a.track(r, "srv", "r1|srv", false, "refused")
+	a.track(r, "srv", "r1|srv", "srv", false, "srv is unreachable: refused")
 	if got := h.next(t); got["event"] != "firing" {
 		t.Fatalf("payload: %v", got)
 	}
-	a.track(r, "srv", "r1|srv", false, "refused") // already firing: no repeat
+	a.track(r, "srv", "r1|srv", "srv", false, "srv is unreachable: refused") // already firing: no repeat
 	h.none(t)
 	if len(a.activeList()) != 1 {
 		t.Fatal("expected one active alert")
 	}
-	a.track(r, "srv", "r1|srv", true, "")
+	a.track(r, "srv", "r1|srv", "srv", true, "")
 	if got := h.next(t); got["event"] != "resolved" {
 		t.Fatalf("payload: %v", got)
 	}
@@ -159,3 +159,54 @@ func osReadFile(p string) (string, error) {
 }
 
 func containsStr(s, sub string) bool { return strings.Contains(s, sub) }
+
+func TestSwarmServiceAndNodeAlerts(t *testing.T) {
+	h, url := newHook(t)
+	a := alertTestServer(t, []config.AlertRule{
+		{ID: "sv", Name: "svc", Kind: "swarm_service", Enabled: true, Containers: []string{"web*"}},
+		{ID: "nd", Name: "nodes", Kind: "swarm_node", Enabled: true},
+	}, url)
+	rules := a.ruleList()
+	live := map[string]bool{}
+
+	var web, db swarmServiceInfo
+	web.ID, web.Spec.Name = "s1", "web"
+	web.ServiceStatus.DesiredTasks, web.ServiceStatus.RunningTasks = 3, 2
+	db.ID, db.Spec.Name = "s2", "db" // outside the "web*" filter
+	db.ServiceStatus.DesiredTasks = 1
+	var task rawTask
+	task.ServiceID, task.Slot = "s1", 3
+	task.Status.State, task.Status.Err = "pending", "no suitable node (insufficient resources on 2 nodes)"
+
+	var svRule, ndRule compiledRule
+	for _, r := range rules {
+		if r.Kind == "swarm_service" {
+			svRule = r
+		} else {
+			ndRule = r
+		}
+	}
+	a.checkSwarmServices(svRule, "mgr", "c1", []swarmServiceInfo{web, db}, []rawTask{task}, nil, live)
+	got := h.next(t)
+	msg, _ := got["message"].(string)
+	if got["event"] != "firing" || !strings.Contains(msg, "2 of 3") || !strings.Contains(msg, "no suitable node") {
+		t.Fatalf("payload: %v", got)
+	}
+	h.none(t) // db is not covered
+
+	web.ServiceStatus.RunningTasks = 3
+	a.checkSwarmServices(svRule, "mgr", "c1", []swarmServiceInfo{web, db}, nil, nil, live)
+	if got := h.next(t); got["event"] != "resolved" {
+		t.Fatalf("payload: %v", got)
+	}
+
+	var n1 swarmNodeInfo
+	n1.ID, n1.Description.Hostname, n1.Status.State = "n1", "node-a", "down"
+	a.checkSwarmNodes(ndRule, "mgr", "c1", []swarmNodeInfo{n1}, live)
+	if got := h.next(t); got["event"] != "firing" || !strings.Contains(got["message"].(string), "node-a is down") {
+		t.Fatalf("payload: %v", got)
+	}
+	n1.Status.State = "ready"
+	a.checkSwarmNodes(ndRule, "mgr", "c1", []swarmNodeInfo{n1}, live)
+	h.next(t)
+}

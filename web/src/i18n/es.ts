@@ -1474,4 +1474,7 @@ export const es: Record<string, string> = {
   "Regular expressions (one per line)": "Expresiones regulares (una por línea)",
   "Exclusions (one per line)": "Exclusiones (una por línea)",
   "A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.": "Una línea de log alerta si coincide cualquiera de ellas, salvo que también coincida una exclusión. Empieza una con (?i) para ignorar mayúsculas.",
+  "Swarm node down": "Nodo swarm caído",
+  "Swarm service degraded": "Servicio swarm degradado",
+  "Pick manager hosts: each cluster is read through the first manager that answers. A service alerts when fewer tasks run than wanted, with the reason their tasks report.": "Elige hosts manager: cada clúster se lee por el primer manager que responda. Un servicio alerta cuando corren menos tareas de las deseadas, con el motivo que reportan sus tareas.",
 }
