@@ -13,6 +13,8 @@ optdepends=('docker: the engine it manages (any Docker-compatible one works, e.g
             'docker-compose: compose stacks'
             'openssh: hosts reached over SSH')
 makedepends=('go' 'npm' 'gcc')
+# the Go binaries are built stripped; strip cannot read the arm64 agent on an x86_64 build host
+options=('!strip' '!debug')
 backup=('etc/ducktainer/ducktainer.env' 'etc/pam.d/ducktainer')
 install=ducktainer.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
