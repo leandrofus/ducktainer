@@ -12,6 +12,7 @@ description: |
   marketplace, terminal and live logs. Sign-in with system users (PAM)
   and roles by POSIX groups.
 vendor: ducktainer
+license: AGPL-3.0-or-later
 
 depends:
   - libpam0g
@@ -46,6 +47,12 @@ contents:
   - src: ./dist/build/ducktainer-agent-linux-arm64
     dst: /usr/lib/ducktainer/agent/ducktainer-agent-linux-arm64
     file_info: { mode: 0755 }
+  - src: ./LICENSE
+    dst: /usr/share/licenses/ducktainer/LICENSE
+    packager: rpm
+  - src: ./LICENSE
+    dst: /usr/share/doc/ducktainer/copyright
+    packager: deb
   - src: ./packaging/systemd/ducktainer.service
     dst: /usr/lib/systemd/system/ducktainer.service
   - src: ./packaging/systemd/ducktainer-pam.socket
