@@ -7,7 +7,7 @@ pkgrel=1
 pkgdesc='Agentless Docker management: web UI, compose stacks, marketplace, terminal and live logs'
 arch=('x86_64' 'aarch64')
 url='https://github.com/leandrofus/ducktainer'
-license=('unknown') # the repository declares no license yet: set the real one before publishing
+license=('AGPL-3.0-only')
 depends=('pam')
 optdepends=('docker: the engine it manages (any Docker-compatible one works, e.g. podman-docker)'
             'docker-compose: compose stacks'
@@ -21,7 +21,7 @@ sha256sums=('SKIP')
 build() {
   cd "$pkgname-$pkgver"
   export GOFLAGS='-buildvcs=false -trimpath -mod=readonly' CGO_ENABLED=1
-  (cd web && npm ci --no-audit --no-fund && npm run build)
+  (cd web && npm install --no-audit --no-fund && npm run build)
   go build -tags pam -ldflags "-s -w -X main.version=$pkgver" -o build/ducktainer .
   # the agent binaries nodes download: static, so nodes need no particular glibc
   for a in amd64 arm64; do

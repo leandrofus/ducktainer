@@ -12,6 +12,7 @@ description: |
   marketplace, terminal and live logs. Sign-in with system users (PAM)
   and roles by POSIX groups.
 vendor: ducktainer
+license: AGPL-3.0
 
 depends:
   - libpam0g
