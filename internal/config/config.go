@@ -166,7 +166,7 @@ type AlertChannel struct {
 type AlertRule struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
-	Kind    string `json:"kind"` // host_down | agent_offline | log_match | swarm_node | swarm_service
+	Kind    string `json:"kind"` // host_down | agent_offline | log_match | swarm_node | swarm_service | audit
 	Enabled bool   `json:"enabled"`
 	// Endpoints limits the hosts watched (empty: all).
 	Endpoints []string `json:"endpoints,omitempty"`
@@ -180,6 +180,18 @@ type AlertRule struct {
 	ForSeconds int `json:"for_seconds,omitempty"`
 	// CooldownMinutes (log_match): minimum time between alerts of the same container.
 	CooldownMinutes int `json:"cooldown_minutes,omitempty"`
+	// audit: Event picks what to report: login_failed | login_new_ip |
+	// destructive | terminal | config_change | custom (Methods/Paths).
+	Event string `json:"event,omitempty"`
+	// Users / ExcludeUsers narrow audit rules by user name (globs).
+	Users        []string `json:"users,omitempty"`
+	ExcludeUsers []string `json:"exclude_users,omitempty"`
+	// Methods and Paths (globs, * matches anything) define a custom event.
+	Methods []string `json:"methods,omitempty"`
+	Paths   []string `json:"paths,omitempty"`
+	// Threshold failed logins from one address within WindowMinutes (login_failed).
+	Threshold     int `json:"threshold,omitempty"`
+	WindowMinutes int `json:"window_minutes,omitempty"`
 	// Channels receiving it (empty: all).
 	Channels []string `json:"channels,omitempty"`
 }
@@ -598,6 +610,10 @@ func (c *Config) clone() *Config {
 			r.Containers = append([]string(nil), r.Containers...)
 			r.Patterns = append([]string(nil), r.Patterns...)
 			r.Exclude = append([]string(nil), r.Exclude...)
+			r.Users = append([]string(nil), r.Users...)
+			r.ExcludeUsers = append([]string(nil), r.ExcludeUsers...)
+			r.Methods = append([]string(nil), r.Methods...)
+			r.Paths = append([]string(nil), r.Paths...)
 			r.Channels = append([]string(nil), r.Channels...)
 			al.Rules[i] = r
 		}

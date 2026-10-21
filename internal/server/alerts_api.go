@@ -83,6 +83,32 @@ func (s *Server) saveAlertRule(w http.ResponseWriter, r *http.Request) {
 			rule.CooldownMinutes = 5
 		}
 		rule.ForSeconds = 0
+	case "audit":
+		switch rule.Event {
+		case "login_failed":
+			if rule.Threshold <= 0 {
+				rule.Threshold = 5
+			}
+			if rule.WindowMinutes <= 0 {
+				rule.WindowMinutes = 10
+			}
+		case "login_new_ip", "destructive", "terminal", "config_change":
+		case "custom":
+			if len(rule.Methods) == 0 && len(rule.Paths) == 0 {
+				writeErr(w, badRequest("enter a method or a path for the audit event"))
+				return
+			}
+		default:
+			writeErr(w, badRequest("choose the audit event"))
+			return
+		}
+		if rule.CooldownMinutes <= 0 {
+			rule.CooldownMinutes = 5
+		}
+		rule.Endpoints, rule.Containers, rule.Patterns, rule.Exclude, rule.ForSeconds = nil, nil, nil, nil, 0
+		if rule.Event != "custom" {
+			rule.Methods, rule.Paths = nil, nil
+		}
 	default:
 		writeErr(w, badRequest("unknown rule type"))
 		return
@@ -107,7 +133,15 @@ func (s *Server) saveAlertRule(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
+	s.reloadAlertRules()
 	writeJSON(w, rule)
+}
+
+// reloadAlertRules makes the engine pick up a change right away.
+func (s *Server) reloadAlertRules() {
+	if s.alerts != nil {
+		s.alerts.loadRules()
+	}
 }
 
 func (s *Server) deleteAlertRule(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +163,7 @@ func (s *Server) deleteAlertRule(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
+	s.reloadAlertRules()
 	writeJSON(w, map[string]bool{"ok": true})
 }
 
@@ -247,6 +282,7 @@ func (s *Server) deleteAlertChannel(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
+	s.reloadAlertRules()
 	writeJSON(w, map[string]bool{"ok": true})
 }
 

@@ -357,4 +357,6 @@ var es = map[string]string{
 	"unknown rule type":                                                                                           "tipo de regla desconocido",
 	"invalid regular expression: %v":                                                                              "expresión regular no válida: %v",
 	"enter the regular expression":                                                                                "introduce la expresión regular",
+	"enter a method or a path for the audit event":                                                                "introduce un método o una ruta para el evento de auditoría",
+	"choose the audit event":                                                                                      "elige el evento de auditoría",
 }

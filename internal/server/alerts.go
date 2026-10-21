@@ -57,6 +57,8 @@ type alertEntry struct {
 type compiledRule struct {
 	config.AlertRule
 	re, skip []*regexp.Regexp
+	// audit rules
+	users, skipUsers, paths []*regexp.Regexp
 }
 
 func (r compiledRule) matches(line string) bool {
@@ -109,8 +111,10 @@ type alerter struct {
 	mu       sync.Mutex
 	rules    []compiledRule
 	active   map[string]*Alert
-	downAt   map[string]time.Time // rule|endpoint -> first failed check
-	lastLog  map[string]time.Time // rule|endpoint|container -> last alert
+	downAt   map[string]time.Time       // rule|endpoint -> first failed check
+	lastLog  map[string]time.Time       // rule|endpoint|container -> last alert
+	known    map[string]map[string]bool // user -> addresses it has signed in from
+	failures map[string][]time.Time     // rule|ip -> recent failed sign-ins
 	watchers map[string]context.CancelFunc
 
 	logMu   sync.Mutex
@@ -123,6 +127,8 @@ func newAlerter(s *Server) *alerter {
 		active:   map[string]*Alert{},
 		downAt:   map[string]time.Time{},
 		lastLog:  map[string]time.Time{},
+		known:    map[string]map[string]bool{},
+		failures: map[string][]time.Time{},
 		watchers: map[string]context.CancelFunc{},
 		logPath:  pathJoinData("alerts.log"),
 	}
@@ -134,6 +140,9 @@ func pathJoinData(name string) string { return config.Dir() + string(os.PathSepa
 func (s *Server) StartAlerts() {
 	a := newAlerter(s)
 	s.alerts = a
+	a.seedKnownIPs()
+	a.loadRules()
+	s.audit.hook = a.onAudit
 	go func() {
 		// let the agents reconnect after a restart before judging them
 		time.Sleep(alertTick)
@@ -158,6 +167,9 @@ func (a *alerter) loadRules() {
 				continue
 			}
 			c := compiledRule{AlertRule: r}
+			if r.Kind == "audit" {
+				c.users, c.skipUsers, c.paths = globAll(r.Users), globAll(r.ExcludeUsers), globAll(r.Paths)
+			}
 			if r.Kind == "log_match" {
 				var err error
 				if c.re, err = compileAll(r.Patterns); err != nil || len(c.re) == 0 {
