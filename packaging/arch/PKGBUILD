@@ -7,7 +7,7 @@ pkgrel=1
 pkgdesc='Agentless Docker management: web UI, compose stacks, marketplace, terminal and live logs'
 arch=('x86_64' 'aarch64')
 url='https://github.com/leandrofus/ducktainer'
-license=('AGPL-3.0-only')
+license=() # not declared yet: set it (and add LICENSE) once the project's license is decided
 depends=('pam')
 optdepends=('docker: the engine it manages (any Docker-compatible one works, e.g. podman-docker)'
             'docker-compose: compose stacks'
