@@ -8,9 +8,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -124,8 +126,11 @@ func (s *Server) agentInstall(w http.ResponseWriter, r *http.Request) {
 	if fp != "" {
 		flags += " --fingerprint " + fp
 	}
+	cands, loopback := s.serverCandidates(r)
 	writeJSON(w, map[string]any{
-		"tls": fp != "",
+		"candidates":    cands,
+		"loopback_only": loopback,
+		"tls":           fp != "",
 		"install": fmt.Sprintf("%s %s %s | sudo sh", curl, auth,
 			shellQuote(server+"/api/agent/install.sh?server="+url.QueryEscape(server))),
 		"manual": fmt.Sprintf("%s %s %s -o ducktainer-agent && chmod +x ducktainer-agent && sudo DUCKTAINER_AGENT_TOKEN=%s ./ducktainer-agent agent %s --install-service",
@@ -166,21 +171,53 @@ NAME=%s
 FINGERPRINT=%s
 TOKEN=%s
 
+die() { echo "error: $*" >&2; echo "Nothing was installed." >&2; exit 1; }
+
 echo "Installing ducktainer-agent as $NAME (server: $SERVER)"
-if [ "$(id -u)" != "0" ]; then
-	echo "run it as root (| sudo sh): the agent is installed as a systemd service" >&2
-	exit 1
+[ "$(id -u)" = "0" ] || die "run it as root (| sudo sh): the agent is installed as a systemd service"
+command -v curl >/dev/null 2>&1 || die "curl is required"
+
+# Everything is checked before anything on this node is touched.
+[ "$(uname -s)" = "Linux" ] || die "this installer is for Linux"
+case "$(uname -m)" in
+x86_64|amd64) ARCH=amd64 ;;
+aarch64|arm64) ARCH=arm64 ;;
+*) ARCH=$(uname -m) ;;
+esac
+[ "$ARCH" = "%s" ] || die "the server provides linux/%s binaries but this node is linux/$ARCH"
+
+BIN=/usr/local/bin/ducktainer-agent
+rm -f "$BIN.new"
+code=0
+curl -fsSL %s -H "Authorization: Bearer $TOKEN" "$SERVER/api/agent/binary" -o "$BIN.new" || code=$?
+if [ "$code" != "0" ]; then
+	rm -f "$BIN.new"
+	case $code in
+	6) die "cannot resolve the name in $SERVER" ;;
+	7) die "cannot connect to $SERVER (connection refused). From this node 'localhost' is the node itself: use an address of the ducktainer server that this node can reach" ;;
+	28) die "timed out connecting to $SERVER: a firewall may be dropping the connection" ;;
+	35|52|56) die "$SERVER closed the connection. ducktainer drops addresses that are not in its allowlist: on the server run 'sudo ducktainer allow add <IP of this node>' and restart it, or start it with --agent-listen :9901 (agents only, token required) and use that port" ;;
+	51|60|90) die "the server certificate does not match the pinned key: this is not the server the command was made for" ;;
+	22) die "the server refused the token (is this host still registered in ducktainer?)" ;;
+	*) die "could not download the agent from $SERVER (curl error $code)" ;;
+	esac
 fi
-command -v curl >/dev/null 2>&1 || { echo "curl is required" >&2; exit 1; }
+chmod 0755 "$BIN.new"
+# a binary that cannot run here (usually a glibc that is too old) must not replace anything
+if ! out=$("$BIN.new" version 2>&1); then
+	rm -f "$BIN.new"
+	echo "$out" >&2
+	case $out in
+	*GLIBC*|*libc.so*) die "this node's C library (glibc $(getconf GNU_LIBC_VERSION 2>/dev/null | cut -d' ' -f2)) is too old for the agent binary this server provides (glibc 2.34 or newer: RHEL 9, Debian 12, Ubuntu 22.04)" ;;
+	esac
+	die "the agent binary does not run on this node"
+fi
+echo "agent binary OK ($out)"
 
 # The token never goes on a command line or in the unit: it is kept in a
 # root-only file read by the service.
 install -d -m 0700 /etc/ducktainer-agent
 (umask 077 && printf 'DUCKTAINER_AGENT_TOKEN=%%s\n' "$TOKEN" > /etc/ducktainer-agent/agent.env)
-
-BIN=/usr/local/bin/ducktainer-agent
-curl -fsSL %s -H "Authorization: Bearer $TOKEN" "$SERVER/api/agent/binary" -o "$BIN.new"
-chmod 0755 "$BIN.new"
 mv -f "$BIN.new" "$BIN"
 
 FLAGS="--server $SERVER --name $NAME"
@@ -214,7 +251,7 @@ systemctl daemon-reload
 systemctl enable ducktainer-agent >/dev/null 2>&1
 systemctl restart ducktainer-agent
 echo "ducktainer-agent is running: systemctl status ducktainer-agent"
-`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), curlTLS)
+`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), runtime.GOARCH, runtime.GOARCH, curlTLS)
 
 	w.Header().Set("Content-Type", "text/x-shellscript; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
@@ -276,4 +313,78 @@ func (s *Server) handleAgentTunnel(w http.ResponseWriter, r *http.Request) {
 	agent.DefaultHub.Unregister(name, session)
 	s.dropClient(name)
 	log.Printf("[agent] node %q disconnected", name)
+}
+
+// serverCandidate is an address of this server that a node may be able to reach.
+type serverCandidate struct {
+	URL   string `json:"url"`
+	Label string `json:"label"`
+}
+
+// serverCandidates lists the addresses to offer for `--server`: the
+// interfaces ducktainer is listening on (and the name the browser used, when
+// it is not loopback). loopbackOnly is true when it only listens on loopback,
+// which no node can reach.
+func (s *Server) serverCandidates(r *http.Request) (cands []serverCandidate, loopbackOnly bool) {
+	scheme := "http"
+	if s.Secure || r.TLS != nil {
+		scheme = "https"
+	}
+	cands = []serverCandidate{}
+	seen := map[string]bool{}
+	add := func(hostport, label string) {
+		u := scheme + "://" + hostport
+		if !seen[u] {
+			seen[u] = true
+			cands = append(cands, serverCandidate{URL: u, Label: label})
+		}
+	}
+	notLoopback := func(host string) bool {
+		if ip := net.ParseIP(host); ip != nil {
+			return !ip.IsLoopback()
+		}
+		return host != "localhost"
+	}
+	if host, _, err := net.SplitHostPort(r.Host); err == nil && notLoopback(host) {
+		add(r.Host, "as opened in the browser")
+	}
+	listen := func(addr, what string) (reachable bool) {
+		host, port, err := net.SplitHostPort(addr)
+		if err != nil {
+			return false
+		}
+		if host != "" && host != "0.0.0.0" && host != "::" {
+			if !notLoopback(host) {
+				return false
+			}
+			add(net.JoinHostPort(host, port), what)
+			return true
+		}
+		ifs, _ := net.Interfaces()
+		for _, ifc := range ifs {
+			if ifc.Flags&net.FlagUp == 0 || ifc.Flags&net.FlagLoopback != 0 || virtualIface(ifc.Name) {
+				continue
+			}
+			addrs, _ := ifc.Addrs()
+			for _, a := range addrs {
+				if ipn, ok := a.(*net.IPNet); ok && ipn.IP.To4() != nil && !ipn.IP.IsLinkLocalUnicast() {
+					add(net.JoinHostPort(ipn.IP.String(), port), what+" · "+ifc.Name)
+				}
+			}
+		}
+		return true
+	}
+	main := listen(s.Listen, "ducktainer")
+	agents := s.AgentListen != "" && listen(s.AgentListen, "agents only")
+	return cands, !main && !agents
+}
+
+// virtualIface skips the bridges and virtual links containers create.
+func virtualIface(name string) bool {
+	for _, p := range []string{"docker", "br-", "veth", "virbr", "cni", "flannel", "cali", "lo"} {
+		if strings.HasPrefix(name, p) {
+			return true
+		}
+	}
+	return false
 }

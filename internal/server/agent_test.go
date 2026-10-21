@@ -192,3 +192,24 @@ func TestSecureTCPEndpoint(t *testing.T) {
 		t.Fatalf("fingerprint = %q, want the server certificate's", ep.Fingerprint)
 	}
 }
+
+func TestInstallScriptChecksBeforeTouchingTheNode(t *testing.T) {
+	srv, cfg, cleanup := newTestServer(t)
+	defer cleanup()
+	addAgentHost(t, cfg, "edge-node", "edge-token")
+	rec := get(srv.Handler(), "/api/agent/install.sh?server=https%3A%2F%2F10.0.0.1%3A9900", "edge-token")
+	script := rec.Body.String()
+	modify := strings.Index(script, "install -d -m 0700 /etc/ducktainer-agent")
+	if rec.Code != http.StatusOK || modify < 0 {
+		t.Fatalf("install.sh: %d\n%s", rec.Code, script)
+	}
+	// everything that can make the install fail runs before the node is modified
+	for _, step := range []string{`uname -m`, `/api/agent/binary`, `"$BIN.new" version`, `GLIBC`} {
+		if at := strings.Index(script, step); at < 0 || at > modify {
+			t.Errorf("%q must run before the node is modified", step)
+		}
+	}
+	if !strings.Contains(script, `[ "$ARCH" = "`+runtime.GOARCH+`" ]`) {
+		t.Error("the architecture check is missing")
+	}
+}
