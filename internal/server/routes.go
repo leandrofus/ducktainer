@@ -21,6 +21,8 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/endpoints", s.admin(s.saveEndpoint))
 	mux.HandleFunc("DELETE /api/endpoints/{name}", s.admin(s.deleteEndpoint))
 	mux.HandleFunc("GET /api/endpoints/{name}/agent-install", s.admin(s.agentInstall))
+	mux.HandleFunc("GET /api/registry/tags", s.admin(s.registryTags))
+	mux.HandleFunc("GET /api/registry/search", s.admin(s.registrySearch))
 	mux.HandleFunc("GET /api/registries", s.admin(s.listRegistries))
 	mux.HandleFunc("POST /api/registries", s.admin(s.saveRegistry))
 	mux.HandleFunc("DELETE /api/registries/{name}", s.admin(s.deleteRegistry))
