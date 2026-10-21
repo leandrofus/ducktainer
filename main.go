@@ -311,6 +311,7 @@ func cmdServe(args []string, openBrowser bool) error {
 	srv.StartExposures()
 	defer srv.StopExposures()
 	srv.StartShortcuts()
+	srv.StartAlerts()
 	scheme := "http"
 	if tc != nil {
 		scheme = "https"
