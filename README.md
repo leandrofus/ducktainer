@@ -272,3 +272,7 @@ Layout:
 - `packaging/`: systemd units, PAM files, nfpm.
 - `web/`: React + Vite.
 - `site/`: the website (Astro).
+
+## License
+
+ducktainer is free software under the **GNU Affero General Public License, version 3 or (at your option) any later version** (`AGPL-3.0-or-later`). The full text is in [`LICENSE`](LICENSE).

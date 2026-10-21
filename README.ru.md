@@ -272,3 +272,7 @@ make clean          # удалить артефакты сборки
 - `packaging/`: юниты systemd, файлы PAM, nfpm.
 - `web/`: React + Vite.
 - `site/`: сайт (Astro).
+
+## Лицензия
+
+ducktainer — свободное программное обеспечение по лицензии **GNU Affero General Public License версии 3 или (на ваш выбор) любой более поздней версии** (`AGPL-3.0-or-later`). Полный текст — в файле [`LICENSE`](LICENSE).
