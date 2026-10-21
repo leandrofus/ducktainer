@@ -347,4 +347,5 @@ var es = map[string]string{
 	"on Windows the service is installed by the MSI package (ducktainer-<version>-x64.msi, on the releases page)": "en Windows el servicio lo instala el paquete MSI (ducktainer-<versión>-x64.msi, en la página de releases)",
 	"`ducktainer engine relay` only runs on Windows":                                                              "`ducktainer engine relay` solo funciona en Windows",
 	"Windows accounts (LogonUser)":                                                                                "cuentas de Windows (LogonUser)",
+	"enter the image":                                                                                             "introduce la imagen",
 }

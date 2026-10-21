@@ -347,4 +347,5 @@ var ru = map[string]string{
 	"on Windows the service is installed by the MSI package (ducktainer-<version>-x64.msi, on the releases page)": "в Windows службу устанавливает пакет MSI (ducktainer-<версия>-x64.msi на странице релизов)",
 	"`ducktainer engine relay` only runs on Windows":                                                              "`ducktainer engine relay` работает только в Windows",
 	"Windows accounts (LogonUser)":                                                                                "учётные записи Windows (LogonUser)",
+	"enter the image":                                                                                             "укажите образ",
 }
