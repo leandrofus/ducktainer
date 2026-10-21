@@ -347,4 +347,13 @@ var ru = map[string]string{
 	"on Windows the service is installed by the MSI package (ducktainer-<version>-x64.msi, on the releases page)": "в Windows службу устанавливает пакет MSI (ducktainer-<версия>-x64.msi на странице релизов)",
 	"`ducktainer engine relay` only runs on Windows":                                                              "`ducktainer engine relay` работает только в Windows",
 	"Windows accounts (LogonUser)":                                                                                "учётные записи Windows (LogonUser)",
+	"enter the SMTP server and at least one recipient":                                                            "укажите SMTP-сервер и хотя бы одного получателя",
+	"unknown channel type":                                                                                        "неизвестный тип канала",
+	"enter a valid http(s) URL":                                                                                   "укажите корректный URL http(s)",
+	"enter a name for the channel":                                                                                "укажите название канала",
+	"enter a name for the rule":                                                                                   "укажите название правила",
+	"enter a valid sender address":                                                                                "укажите корректный адрес отправителя",
+	"unknown rule type":                                                                                           "неизвестный тип правила",
+	"invalid regular expression: %v":                                                                              "некорректное регулярное выражение: %v",
+	"enter the regular expression":                                                                                "укажите регулярное выражение",
 }

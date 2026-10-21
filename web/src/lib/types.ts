@@ -370,3 +370,49 @@ export interface SwarmStack {
   location?: StackLocation
   node?: boolean
 }
+
+export interface AlertRule {
+  id: string
+  name: string
+  kind: 'host_down' | 'agent_offline' | 'log_match'
+  enabled: boolean
+  endpoints?: string[]
+  containers?: string[]
+  pattern?: string
+  for_seconds?: number
+  cooldown_minutes?: number
+  channels?: string[]
+}
+
+export interface AlertChannel {
+  id: string
+  name: string
+  kind: 'webhook' | 'email'
+  url?: string
+  host?: string
+  port?: number
+  security?: 'starttls' | 'tls' | 'none'
+  username?: string
+  password?: string
+  from?: string
+  to?: string[]
+}
+
+export interface ActiveAlert {
+  key: string
+  rule: string
+  kind: string
+  endpoint: string
+  message: string
+  since: string
+}
+
+export interface AlertEntry {
+  time: string
+  state: 'firing' | 'resolved' | 'event'
+  rule: string
+  kind: string
+  endpoint: string
+  container?: string
+  message: string
+}
