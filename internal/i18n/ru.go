@@ -357,4 +357,6 @@ var ru = map[string]string{
 	"unknown rule type":                                                                                           "неизвестный тип правила",
 	"invalid regular expression: %v":                                                                              "некорректное регулярное выражение: %v",
 	"enter the regular expression":                                                                                "укажите регулярное выражение",
+	"enter a method or a path for the audit event":                                                                "укажите метод или путь для события аудита",
+	"choose the audit event":                                                                                      "выберите событие аудита",
 }

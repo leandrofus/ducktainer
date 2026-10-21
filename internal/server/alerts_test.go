@@ -210,3 +210,59 @@ func TestSwarmServiceAndNodeAlerts(t *testing.T) {
 	a.checkSwarmNodes(ndRule, "mgr", "c1", []swarmNodeInfo{n1}, live)
 	h.next(t)
 }
+
+func auditRule(r config.AlertRule) config.AlertRule {
+	r.Kind, r.Enabled = "audit", true
+	return r
+}
+
+func TestAuditRules(t *testing.T) {
+	h, url := newHook(t)
+	a := alertTestServer(t, []config.AlertRule{
+		auditRule(config.AlertRule{ID: "lf", Name: "bruteforce", Event: "login_failed", Threshold: 3, WindowMinutes: 10, CooldownMinutes: 5}),
+		auditRule(config.AlertRule{ID: "ni", Name: "new ip", Event: "login_new_ip"}),
+		auditRule(config.AlertRule{ID: "ds", Name: "destructive", Event: "destructive", ExcludeUsers: []string{"ci-*"}, CooldownMinutes: 1}),
+		auditRule(config.AlertRule{ID: "cu", Name: "custom", Event: "custom", Methods: []string{"post"}, Paths: []string{"/api/e/*/images/pull"}, CooldownMinutes: 1}),
+	}, url)
+
+	// failed sign-ins: only the third from the same address fires
+	bad := auditEntry{User: "root", Method: "LOGIN", Path: "/api/login", Status: 401, IP: "9.9.9.9", Note: "wrong password"}
+	a.onAudit(bad)
+	a.onAudit(bad)
+	h.none(t)
+	a.onAudit(bad)
+	if got := h.next(t); got["rule"] != "bruteforce" {
+		t.Fatalf("payload: %v", got)
+	}
+	a.onAudit(auditEntry{User: "root", Method: "LOGIN", Status: 401, IP: "8.8.8.8"}) // another address starts from zero
+	h.none(t)
+
+	// a user's first sign-in is not "new"; a second address is
+	ok := auditEntry{User: "ana", Role: "admin", Method: "LOGIN", Path: "/api/login", Status: 200, IP: "10.0.0.1"}
+	a.onAudit(ok)
+	h.none(t)
+	ok.IP = "10.0.0.2"
+	a.onAudit(ok)
+	if got := h.next(t); got["rule"] != "new ip" {
+		t.Fatalf("payload: %v", got)
+	}
+	a.onAudit(ok) // known now
+	h.none(t)
+
+	// destructive actions, with an excluded user and failed attempts ignored
+	del := auditEntry{User: "ana", Role: "admin", Method: "DELETE", Path: "/api/e/local/containers/abc", Status: 200, IP: "10.0.0.1"}
+	a.onAudit(del)
+	if got := h.next(t); got["rule"] != "destructive" {
+		t.Fatalf("payload: %v", got)
+	}
+	a.onAudit(auditEntry{User: "ci-bot", Method: "DELETE", Path: "/api/e/local/containers/x", Status: 200})
+	a.onAudit(auditEntry{User: "bob", Method: "DELETE", Path: "/api/e/local/containers/y", Status: 403})
+	a.onAudit(auditEntry{User: "bob", Method: "POST", Path: "/api/e/local/containers/start", Status: 200}) // not destructive
+	h.none(t)
+
+	// custom method + path glob
+	a.onAudit(auditEntry{User: "ana", Method: "POST", Path: "/api/e/local/images/pull", Status: 200})
+	if got := h.next(t); got["rule"] != "custom" {
+		t.Fatalf("payload: %v", got)
+	}
+}

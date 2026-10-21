@@ -374,7 +374,7 @@ export interface SwarmStack {
 export interface AlertRule {
   id: string
   name: string
-  kind: 'host_down' | 'agent_offline' | 'log_match' | 'swarm_node' | 'swarm_service'
+  kind: 'host_down' | 'agent_offline' | 'log_match' | 'swarm_node' | 'swarm_service' | 'audit'
   enabled: boolean
   endpoints?: string[]
   containers?: string[]
@@ -382,6 +382,13 @@ export interface AlertRule {
   exclude?: string[]
   for_seconds?: number
   cooldown_minutes?: number
+  event?: string
+  users?: string[]
+  exclude_users?: string[]
+  methods?: string[]
+  paths?: string[]
+  threshold?: number
+  window_minutes?: number
   channels?: string[]
 }
 

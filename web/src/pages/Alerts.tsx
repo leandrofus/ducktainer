@@ -17,7 +17,24 @@ const KIND_LABEL: Record<string, string> = {
   log_match: tr('Log pattern'),
   swarm_node: tr('Swarm node down'),
   swarm_service: tr('Swarm service degraded'),
+  audit: tr('Audit event'),
 }
+
+const AUDIT_EVENTS: Record<string, string> = {
+  login_failed: tr('Failed sign-ins'),
+  login_new_ip: tr('Sign-in from a new address'),
+  destructive: tr('Destructive actions (delete, prune, kill)'),
+  terminal: tr('Terminal opened in a container'),
+  config_change: tr('Settings changed'),
+  custom: tr('Custom (method and path)'),
+}
+
+/** What a rule watches, in one line. */
+const detail = (r: AlertRule) =>
+  r.kind === 'audit' ? AUDIT_EVENTS[r.event || ''] ?? r.event ?? '' : r.kind === 'log_match' ? (r.patterns || []).join('  |  ') : tr('after {0}s', String(r.for_seconds ?? 0))
+
+const list = (v?: string[]) => (v || []).join(', ')
+const parseList = (v: string) => v.split(',').map((x) => x.trim()).filter(Boolean)
 
 const ERROR_PATTERN = '(?i)\\b(error|fatal|panic|exception|traceback|critical)\\b'
 
@@ -75,7 +92,7 @@ export function RuleDialog({ initial, onClose, seed, sample }: { initial?: Alert
           <button className="btn" onClick={onClose}>{tr('Cancel')}</button>
           <button
             className="btn btn-primary"
-            disabled={busy || !f.name.trim() || (f.kind === 'log_match' && !f.patterns?.some((x) => x.trim()))}
+            disabled={busy || !f.name.trim() || (f.kind === 'log_match' && !f.patterns?.some((x) => x.trim())) || (f.kind === 'audit' && !f.event)}
             onClick={async () => {
               setBusy(true)
               try {
@@ -98,16 +115,52 @@ export function RuleDialog({ initial, onClose, seed, sample }: { initial?: Alert
         <label className="field"><span>{tr('Name')}</span><input value={f.name} onChange={(e) => set({ name: e.target.value })} autoFocus /></label>
         <label className="field">
           <span>{tr('Type')}</span>
-          <select value={f.kind} onChange={(e) => set({ kind: e.target.value as AlertRule['kind'], endpoints: [] })}>
+          <select value={f.kind} onChange={(e) => set({ kind: e.target.value as AlertRule['kind'], endpoints: [], event: e.target.value === 'audit' ? 'login_failed' : undefined })}>
             {Object.entries(KIND_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
         </label>
       </div>
-      <div className="field" style={{ marginTop: 12 }}>
-        <span>{tr('Hosts')}</span>
-        <HostPicker value={f.endpoints || []} onChange={(endpoints) => set({ endpoints })} hosts={hostChoices} all={tr('All')} />
-      </div>
-      {f.kind === 'log_match' ? (
+      {f.kind !== 'audit' && (
+        <div className="field" style={{ marginTop: 12 }}>
+          <span>{tr('Hosts')}</span>
+          <HostPicker value={f.endpoints || []} onChange={(endpoints) => set({ endpoints })} hosts={hostChoices} all={tr('All')} />
+        </div>
+      )}
+      {f.kind === 'audit' ? (
+        <>
+          <label className="field" style={{ marginTop: 12 }}>
+            <span>{tr('Event')}</span>
+            <select value={f.event || ''} onChange={(e) => set({ event: e.target.value })}>
+              <option value="">{tr('Choose…')}</option>
+              {Object.entries(AUDIT_EVENTS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </label>
+          {f.event === 'login_failed' && (
+            <div className="grid-2" style={{ marginTop: 12 }}>
+              <label className="field"><span>{tr('Failed attempts from one address')}</span><input type="number" min={1} value={f.threshold ?? 5} onChange={(e) => set({ threshold: Number(e.target.value) })} /></label>
+              <label className="field"><span>{tr('Within (minutes)')}</span><input type="number" min={1} value={f.window_minutes ?? 10} onChange={(e) => set({ window_minutes: Number(e.target.value) })} /></label>
+            </div>
+          )}
+          {f.event === 'custom' && (
+            <div className="grid-2" style={{ marginTop: 12 }}>
+              <label className="field"><span>{tr('Methods')}</span><input value={list(f.methods)} placeholder="POST, PUT" onChange={(e) => set({ methods: parseList(e.target.value) })} /></label>
+              <label className="field"><span>{tr('Paths')}</span><input className="mono" value={list(f.paths)} placeholder="/api/e/*/images/pull" onChange={(e) => set({ paths: parseList(e.target.value) })} /></label>
+            </div>
+          )}
+          {f.event && f.event !== 'login_failed' && f.event !== 'login_new_ip' && (
+            <p className="help">{tr('Only actions that went through are reported.')}</p>
+          )}
+          {f.event === 'login_new_ip' && <p className="help">{tr('A user\'s first sign-in is not reported: the addresses are learned from the audit log.')}</p>}
+          <div className="grid-2" style={{ marginTop: 12 }}>
+            <label className="field"><span>{tr('Only these users')}</span><input value={list(f.users)} placeholder={tr('all')} onChange={(e) => set({ users: parseList(e.target.value) })} /></label>
+            <label className="field"><span>{tr('Except these users')}</span><input value={list(f.exclude_users)} placeholder="ci-*" onChange={(e) => set({ exclude_users: parseList(e.target.value) })} /></label>
+          </div>
+          <label className="field" style={{ marginTop: 12 }}>
+            <span>{tr('Minutes between alerts of the same user')}</span>
+            <input type="number" min={1} value={f.cooldown_minutes ?? 5} onChange={(e) => set({ cooldown_minutes: Number(e.target.value) })} />
+          </label>
+        </>
+      ) : f.kind === 'log_match' ? (
         <>
           <label className="field" style={{ marginTop: 12 }}>
             <span>{tr('Regular expressions (one per line)')}</span>
@@ -313,7 +366,7 @@ function Status() {
                 <tr key={a.key}>
                   <td><strong>{a.rule}</strong> <Tag tone="bad">{KIND_LABEL[a.kind] ?? a.kind}</Tag></td>
                   <td>{a.endpoint}</td>
-                  <td className="small">{a.message}</td>
+                  <td className="small cell-fill" title={a.message}>{a.message}</td>
                   <td className="small">{ago(a.since)}</td>
                 </tr>
               ))}
@@ -334,8 +387,8 @@ function Status() {
                   <td className="small">{dateTime(h.time)}</td>
                   <td>{stateTag(h.state)}</td>
                   <td>{h.rule}</td>
-                  <td className="small">{h.endpoint}{h.container ? ` / ${h.container}` : ''}</td>
-                  <td className="small mono" style={{ wordBreak: 'break-word' }}>{h.message}</td>
+                  <td className="small cell-trunc" title={`${h.endpoint}${h.container ? ` / ${h.container}` : ''}`}>{h.endpoint}{h.container ? ` / ${h.container}` : ''}</td>
+                  <td className="small mono cell-fill" title={h.message}>{h.message}</td>
                 </tr>
               ))}
             </tbody>
@@ -377,8 +430,8 @@ function Rules() {
                 >
                   <td><strong>{r.name}</strong></td>
                   <td>{KIND_LABEL[r.kind] ?? r.kind}</td>
-                  <td className="small">{r.endpoints?.length ? r.endpoints.join(', ') : <span className="muted">{tr('All')}</span>}</td>
-                  <td className="small mono">{r.kind === 'log_match' ? (r.patterns || []).join('  |  ') : tr('after {0}s', String(r.for_seconds ?? 0))}</td>
+                  <td className="small cell-trunc" title={r.endpoints?.join(', ')}>{r.endpoints?.length ? r.endpoints.join(', ') : <span className="muted">{tr('All')}</span>}</td>
+                  <td className="small mono cell-fill" title={detail(r)}>{detail(r)}</td>
                   <td>
                     <button className={`switch${r.enabled ? ' on' : ''}`} aria-label={tr('Active')} onClick={() => save({ ...r, enabled: !r.enabled })}><span /></button>
                   </td>
