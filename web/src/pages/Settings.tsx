@@ -19,9 +19,14 @@ interface AgentInstall {
   tls: boolean
   candidates: { url: string; label: string }[]
   loopback_only: boolean
+  /** os/arch pairs the server has an agent binary for */
+  targets: string[]
 }
 
-const agentInstall = (name: string, server: string) => api.get<AgentInstall>(`/endpoints/${enc(name)}/agent-install?server=${enc(server)}`)
+type NodeOS = 'linux' | 'windows'
+
+const agentInstall = (name: string, server: string, os: NodeOS = 'linux') =>
+  api.get<AgentInstall>(`/endpoints/${enc(name)}/agent-install?server=${enc(server)}&os=${os}`)
 
 /** The commands with an address the node can reach: the browser's, unless it is localhost. */
 async function agentInstallBest(name: string) {
@@ -47,9 +52,10 @@ function AgentCommands({ name }: { name: string }) {
   // is useless when it is localhost, so the server's reachable ones are offered
   const [server, setServer] = useState(window.location.origin)
   const [picked, setPicked] = useState(false)
+  const [os, setOs] = useState<NodeOS>('linux')
   useEffect(() => {
     const h = setTimeout(() => {
-      agentInstall(name, server)
+      agentInstall(name, server, os)
         .then((c) => {
           setCmds(c)
           setErr('')
@@ -58,7 +64,7 @@ function AgentCommands({ name }: { name: string }) {
         .catch((e) => setErr(e.message))
     }, 300)
     return () => clearTimeout(h)
-  }, [name, server])
+  }, [name, server, os])
   if (err && !cmds) return <div className="alert alert-bad">{err}</div>
   if (!cmds) return <Spinner />
   const box = (cmd: string) => (
@@ -68,6 +74,17 @@ function AgentCommands({ name }: { name: string }) {
   )
   return (
     <div style={{ marginTop: 12 }}>
+      <div className="row gap" style={{ marginBottom: 8 }}>
+        <span className="small muted">{tr('Node:')}</span>
+        {(['linux', 'windows'] as NodeOS[]).map((o) => {
+          const available = cmds.targets.some((t) => t.startsWith(o + '/'))
+          return (
+            <button key={o} type="button" className={`btn btn-sm${os === o ? ' btn-primary' : ''}`} disabled={!available && os !== o} title={available ? undefined : tr('This server has no agent binary for {0}', o)} onClick={() => setOs(o)}>
+              {o === 'linux' ? 'Linux' : 'Windows'}
+            </button>
+          )
+        })}
+      </div>
       <label className="field">
         <span>{tr('Server address, as the node will reach it')}</span>
         <input className="mono" list="agent-server-addrs" value={server} onChange={(e) => (setPicked(true), setServer(e.target.value.trim()))} />
@@ -86,7 +103,7 @@ function AgentCommands({ name }: { name: string }) {
         </div>
       )}
       <div className="row gap" style={{ marginBottom: 4 }}>
-        <span className="small muted grow"><strong>{tr('Run this command on the remote node:')}</strong></span>
+        <span className="small muted grow"><strong>{os === 'windows' ? tr('Run this in an elevated PowerShell (Run as administrator) on the node:') : tr('Run this command on the remote node:')}</strong></span>
         <button type="button" className="btn btn-sm" onClick={() => { copy(cmds.install); toast.ok(tr('Command copied')) }}><ClipboardCopy size={13} /> {tr('Copy')}</button>
       </div>
       {box(cmds.install)}
@@ -94,6 +111,7 @@ function AgentCommands({ name }: { name: string }) {
         <summary className="small muted" style={{ cursor: 'pointer' }}>{tr('Or standalone manual command (without script)')}</summary>
         <div style={{ marginTop: 4 }}>{box(cmds.manual)}</div>
       </details>
+      {os === 'windows' && <p className="help">{tr('Needs Windows PowerShell 5.1 or PowerShell 7 and the Docker engine on the node (named pipe docker_engine). It installs the ducktainer-agent Windows service.')}</p>}
       <p className="help">{tr('The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.')}</p>
       <p className="help">{cmds.tls
         ? tr('The commands pin this server\'s certificate: a node cannot be fed a different binary or server. The token only works for this host and is kept on the node in /etc/ducktainer-agent/agent.env (root only).')

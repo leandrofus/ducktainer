@@ -15,6 +15,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/agent/binary", s.serveAgentBinary)
 	mux.HandleFunc("GET /api/agent/version", s.agentVersion)
 	mux.HandleFunc("GET /api/agent/install.sh", s.serveAgentInstallScript)
+	mux.HandleFunc("GET /api/agent/install.ps1", s.serveAgentInstallPS)
 	mux.HandleFunc("GET /api/agent/tunnel", s.handleAgentTunnel)
 
 	// global settings

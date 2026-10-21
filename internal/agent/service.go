@@ -16,10 +16,14 @@ const (
 // quote protects a value in a systemd ExecStart line.
 func quote(v string) string { return `"` + strings.ReplaceAll(v, `"`, `\"`) + `"` }
 
-// InstallService configures and enables a systemd unit for ducktainer-agent on Linux.
+// InstallService installs the agent as a service: a systemd unit on Linux,
+// a Windows service on Windows.
 func InstallService(cfg Config) error {
+	if runtime.GOOS == "windows" {
+		return installWindowsService(cfg)
+	}
 	if runtime.GOOS != "linux" {
-		return fmt.Errorf("systemd service installation is only supported on Linux")
+		return fmt.Errorf("the agent service can only be installed on Linux (systemd) and Windows")
 	}
 	if os.Geteuid() != 0 {
 		return fmt.Errorf("root privileges required to install systemd service (use sudo)")

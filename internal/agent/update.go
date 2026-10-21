@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -30,10 +31,9 @@ type versionInfo struct {
 }
 
 // updatable says whether this build can replace itself: release builds only
-// (a "dev" binary has no version to compare), and not on Windows, where a
-// running executable cannot be replaced.
+// (a "dev" binary has no version to compare).
 func updatable(version string) bool {
-	return version != "" && version != "dev" && runtime.GOOS != "windows"
+	return version != "" && version != "dev"
 }
 
 // autoUpdate keeps the agent at the version of the server it connects to:
@@ -42,6 +42,7 @@ func updatable(version string) bool {
 // into it. A binary that does not run, or reports another version, leaves the
 // current one untouched.
 func autoUpdate(ctx context.Context, cfg Config, tlsConf *tls.Config) {
+	cleanOldBinary()
 	if !updatable(cfg.Version) {
 		return
 	}
@@ -62,7 +63,7 @@ func autoUpdate(ctx context.Context, cfg Config, tlsConf *tls.Config) {
 			log.Printf("[agent] update check: %v", err)
 			continue
 		}
-		if !info.Auto || info.Version == "" || info.Version == "dev" || info.Version == cfg.Version {
+		if !info.Auto || info.Version == "" || info.Version == "dev" || sameVersion(info.Version, cfg.Version) {
 			continue
 		}
 		if info.Version == failed && time.Since(failedAt) < updateRetry {
@@ -72,6 +73,10 @@ func autoUpdate(ctx context.Context, cfg Config, tlsConf *tls.Config) {
 		exe, err := selfPath()
 		if err == nil {
 			err = replaceSelf(ctx, client, base, cfg, info.Version, exe)
+		}
+		if errors.Is(err, errUpdatedRestartManually) {
+			log.Printf("[agent] %v", err)
+			return
 		}
 		if err != nil {
 			log.Printf("[agent] update to %s failed, staying on %s: %v", info.Version, cfg.Version, err)
@@ -120,6 +125,16 @@ func fetchVersion(ctx context.Context, client *http.Client, base string, cfg Con
 	return info, json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&info)
 }
 
+// errUpdatedRestartManually: the binary was replaced but this process cannot
+// restart itself.
+var errUpdatedRestartManually = errors.New("the agent was updated: restart it to run the new version")
+
+// sameVersion compares versions ignoring a leading "v": the packages are built
+// as 1.8.0 and the MSI as v1.8.0.
+func sameVersion(a, b string) bool {
+	return strings.TrimPrefix(a, "v") == strings.TrimPrefix(b, "v")
+}
+
 // selfPath is the file this agent runs from.
 func selfPath() (string, error) {
 	exe, err := os.Executable()
@@ -134,7 +149,7 @@ func selfPath() (string, error) {
 func replaceSelf(ctx context.Context, client *http.Client, base string, cfg Config, want, exe string) error {
 	tmp := exe + ".new"
 	defer os.Remove(tmp) // gone after the rename; cleans up after a failure
-	resp, err := authedGet(ctx, client, cfg, base+"/api/agent/binary?arch="+runtime.GOARCH)
+	resp, err := authedGet(ctx, client, cfg, base+"/api/agent/binary?os="+runtime.GOOS+"&arch="+runtime.GOARCH)
 	if err != nil {
 		return err
 	}
@@ -159,10 +174,10 @@ func replaceSelf(ctx context.Context, client *http.Client, base string, cfg Conf
 	if err != nil {
 		return fmt.Errorf("the new binary does not run here: %v: %s", err, strings.TrimSpace(string(out)))
 	}
-	if got := strings.TrimSpace(string(out)); got != "ducktainer "+want {
+	if got := strings.TrimSpace(string(out)); !sameVersion(strings.TrimPrefix(got, "ducktainer "), want) || !strings.HasPrefix(got, "ducktainer ") {
 		return fmt.Errorf("the new binary reports %q, expected version %s", got, want)
 	}
-	if err := os.Rename(tmp, exe); err != nil {
+	if err := swapBinary(tmp, exe); err != nil {
 		return err
 	}
 	log.Printf("[agent] updated to %s: restarting", want)

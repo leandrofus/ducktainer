@@ -88,3 +88,9 @@ func TestUpdatable(t *testing.T) {
 		t.Fatalf("httpBase: %q", got)
 	}
 }
+
+func TestSameVersionIgnoresTheLeadingV(t *testing.T) {
+	if !sameVersion("v1.8.0", "1.8.0") || !sameVersion("1.8.0", "1.8.0") || sameVersion("1.8.0", "1.8.1") {
+		t.Fatal("sameVersion")
+	}
+}

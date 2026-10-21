@@ -1516,4 +1516,8 @@ export const ru: Record<string, string> = {
   "Agent {0}": "Агент {0}",
   "behind the server ({0}); automatic update is off": "отстаёт от сервера ({0}); автообновление отключено",
   "updating to {0}…": "обновляется до {0}…",
+  "Node:": "Узел:",
+  "This server has no agent binary for {0}": "У этого сервера нет бинарника агента для {0}",
+  "Run this in an elevated PowerShell (Run as administrator) on the node:": "Выполните это в PowerShell с правами администратора на узле:",
+  "Needs Windows PowerShell 5.1 or PowerShell 7 and the Docker engine on the node (named pipe docker_engine). It installs the ducktainer-agent Windows service.": "Нужен Windows PowerShell 5.1 или PowerShell 7 и движок Docker на узле (именованный канал docker_engine). Устанавливает службу Windows ducktainer-agent.",
 }

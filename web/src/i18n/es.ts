@@ -1508,4 +1508,8 @@ export const es: Record<string, string> = {
   "Agent {0}": "Agente {0}",
   "behind the server ({0}); automatic update is off": "por detrás del servidor ({0}); la actualización automática está desactivada",
   "updating to {0}…": "actualizando a {0}…",
+  "Node:": "Nodo:",
+  "This server has no agent binary for {0}": "Este servidor no tiene binario de agente para {0}",
+  "Run this in an elevated PowerShell (Run as administrator) on the node:": "Ejecuta esto en un PowerShell elevado (Ejecutar como administrador) en el nodo:",
+  "Needs Windows PowerShell 5.1 or PowerShell 7 and the Docker engine on the node (named pipe docker_engine). It installs the ducktainer-agent Windows service.": "Necesita Windows PowerShell 5.1 o PowerShell 7 y el motor Docker en el nodo (named pipe docker_engine). Instala el servicio de Windows ducktainer-agent.",
 }
