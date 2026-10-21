@@ -1485,4 +1485,9 @@ export const ru: Record<string, string> = {
   "Swarm node down": "Узел swarm недоступен",
   "Swarm service degraded": "Сервис swarm деградирован",
   "Pick manager hosts: each cluster is read through the first manager that answers. A service alerts when fewer tasks run than wanted, with the reason their tasks report.": "Выберите узлы-менеджеры: каждый кластер читается через первый ответивший менеджер. Сервис вызывает оповещение, когда запущено меньше задач, чем нужно, с причиной, которую сообщают задачи.",
+  "Create alert from selection…": "Создать оповещение из выделения…",
+  "Create alert from this line…": "Создать оповещение из этой строки…",
+  "Log: {0}": "Лог: {0}",
+  "Generalize numbers, dates, IPs and ids": "Обобщить числа, даты, IP и идентификаторы",
+  "Matches {0} of the {1} lines on screen.": "Совпадает с {0} из {1} строк на экране.",
 }

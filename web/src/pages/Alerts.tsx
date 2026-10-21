@@ -3,6 +3,7 @@ import { Bell, BellRing, Check, Mail, Pencil, Plus, Send, Trash2, Webhook } from
 import { t as tr } from '../i18n'
 import { api, enc } from '../lib/api'
 import { dateTime } from '../lib/format'
+import { previewRegex, suggestPattern } from '../lib/regex'
 import { isViewer } from '../lib/session'
 import { invalidate, useResource } from '../lib/store'
 import type { ActiveAlert, AlertChannel, AlertEntry, AlertRule, Endpoint } from '../lib/types'
@@ -43,20 +44,29 @@ function HostPicker({ value, onChange, hosts, all, labels }: { value: string[]; 
   )
 }
 
-function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => void }) {
+export function RuleDialog({ initial, onClose, seed, sample }: { initial?: AlertRule; onClose: () => void; seed?: string; sample?: string[] }) {
   const hosts = useResource<Endpoint[]>('/endpoints').data || []
   const channels = useResource<{ rules: AlertRule[]; channels: AlertChannel[] }>('/alerts/config').data?.channels || []
   const [f, setF] = useState<AlertRule>(
     initial ?? { id: '', name: '', kind: 'host_down', enabled: true, for_seconds: 60, cooldown_minutes: 5, patterns: [ERROR_PATTERN] },
   )
   const [busy, setBusy] = useState(false)
+  const [generalize, setGeneralize] = useState(true)
   const set = (p: Partial<AlertRule>) => setF({ ...f, ...p })
+  // checked against the lines on screen when the rule comes from the log viewer
+  const hits = (() => {
+    if (!sample) return null
+    const res = (f.patterns || []).filter((x) => x.trim()).map(previewRegex)
+    const skip = (f.exclude || []).filter((x) => x.trim()).map(previewRegex)
+    const ok = (l: string) => res.some((r) => r?.test(l)) && !skip.some((r) => r?.test(l))
+    return { n: sample.filter(ok).length, first: sample.find(ok) }
+  })()
   const agentHosts = hosts.filter((h) => h.url.startsWith('agent:')).map((h) => h.name)
   const plainHosts = hosts.filter((h) => !h.url.startsWith('agent:')).map((h) => h.name)
   const hostChoices = f.kind === 'agent_offline' ? agentHosts : f.kind === 'host_down' ? plainHosts : hosts.map((h) => h.name)
   return (
     <Modal
-      title={initial ? tr('Edit {0}', initial.name) : tr('New alert rule')}
+      title={initial?.id ? tr('Edit {0}', initial.name) : tr('New alert rule')}
       icon={<BellRing size={18} />}
       wide
       onClose={onClose}
@@ -103,6 +113,24 @@ function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => 
             <span>{tr('Regular expressions (one per line)')}</span>
             <textarea className="mono" rows={3} value={(f.patterns || []).join('\n')} onChange={(e) => set({ patterns: e.target.value.split('\n') })} />
           </label>
+          {seed !== undefined && (
+            <label className="check" style={{ marginTop: 6 }}>
+              <input
+                type="checkbox"
+                checked={generalize}
+                onChange={(e) => {
+                  setGeneralize(e.target.checked)
+                  set({ patterns: [suggestPattern(seed, e.target.checked)] })
+                }}
+              />{' '}
+              {tr('Generalize numbers, dates, IPs and ids')}
+            </label>
+          )}
+          {hits && (
+            <p className="help" style={{ marginTop: 4 }}>
+              {tr('Matches {0} of the {1} lines on screen.', String(hits.n), String(sample!.length))}
+            </p>
+          )}
           <div className="row gap" style={{ marginTop: 4 }}>
             <button type="button" className="btn btn-sm" onClick={() => set({ patterns: [...(f.patterns || []).filter((x) => x.trim() && x !== ERROR_PATTERN), ERROR_PATTERN] })}>{tr('Errors preset')}</button>
             <span className="help grow">{tr('A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.')}</span>

@@ -1477,4 +1477,9 @@ export const es: Record<string, string> = {
   "Swarm node down": "Nodo swarm caído",
   "Swarm service degraded": "Servicio swarm degradado",
   "Pick manager hosts: each cluster is read through the first manager that answers. A service alerts when fewer tasks run than wanted, with the reason their tasks report.": "Elige hosts manager: cada clúster se lee por el primer manager que responda. Un servicio alerta cuando corren menos tareas de las deseadas, con el motivo que reportan sus tareas.",
+  "Create alert from selection…": "Crear alerta desde la selección…",
+  "Create alert from this line…": "Crear alerta desde esta línea…",
+  "Log: {0}": "Log: {0}",
+  "Generalize numbers, dates, IPs and ids": "Generalizar números, fechas, IPs e ids",
+  "Matches {0} of the {1} lines on screen.": "Coincide con {0} de las {1} líneas en pantalla.",
 }

@@ -1,12 +1,16 @@
 import { t as tr } from '../i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Pause, Play, Search, Trash2, Download, WrapText, Clock, AlertCircle } from 'lucide-react'
+import { Pause, Play, Search, Trash2, Download, WrapText, Clock, AlertCircle, BellPlus } from 'lucide-react'
 import { stream } from '../lib/api'
 import type { LogLine } from '../lib/types'
 import { copy, hue } from '../lib/format'
 import { useMenu } from '../ui/ContextMenu'
 import { usePref } from '../lib/prefs'
+import { isViewer } from '../lib/session'
+import { suggestPattern } from '../lib/regex'
+import { openDialog } from '../ui/overlays'
+import { RuleDialog } from '../pages/Alerts'
 
 const MAX = 8000
 
@@ -40,7 +44,13 @@ const strip = (s: string) => s.replace(/\x1b\[[\d;?]*[A-Za-z]/g, '')
 const LEVEL = /\b(ERROR|ERR|FATAL|PANIC|CRIT(ICAL)?|WARN(ING)?)\b/i
 const ERRLEVEL = /\b(ERROR|ERR|FATAL|PANIC|CRIT(ICAL)?)\b|"level":"(error|fatal)"/i
 
-export function LogViewer({ path, multi, height }: { path: string; multi?: boolean; height?: string }) {
+export interface LogAlertScope {
+  ep: string
+  /** container name (or glob) the rule should watch; `source` is the line's label in multi-source logs */
+  container: (source?: string) => string
+}
+
+export function LogViewer({ path, multi, height, alert }: { path: string; multi?: boolean; height?: string; alert?: LogAlertScope }) {
   const [lines, setLines] = useState<LogLine[]>([])
   const [follow, setFollow] = useState(true)
   const [tail, setTail] = usePref('logs.tail', '500')
@@ -109,6 +119,29 @@ export function LogViewer({ path, multi, height }: { path: string; multi?: boole
 
   const sources = useMemo(() => (multi ? [...new Set(lines.map((l) => l.c || ''))].filter(Boolean).sort() : []), [lines, multi])
 
+  // a rule from the selected text (or the whole line), checked against what is on screen
+  const createAlert = (l: LogLine, selected: string) => {
+    const seed = (selected || strip(l.m)).trim().slice(0, 300)
+    const container = alert!.container(l.c)
+    openDialog((close) => (
+      <RuleDialog
+        onClose={close}
+        seed={seed}
+        sample={visible.map((x) => strip(x.m))}
+        initial={{
+          id: '',
+          name: tr('Log: {0}', seed.slice(0, 40)),
+          kind: 'log_match',
+          enabled: true,
+          endpoints: [alert!.ep],
+          containers: container ? [container] : [],
+          patterns: [suggestPattern(seed, true)],
+          cooldown_minutes: 5,
+        }}
+      />
+    ))
+  }
+
   const lineMenu = (l: LogLine) =>
     menu(() => [
       { label: tr('Copy line'), onClick: () => copy(strip(l.m)) },
@@ -116,6 +149,11 @@ export function LogViewer({ path, multi, height }: { path: string; multi?: boole
       { label: tr('Copy everything visible'), hint: `${visible.length}`, onClick: () => copy(visible.map((x) => strip(x.m)).join('\n')) },
       'sep',
       window.getSelection()?.toString() && { label: tr('Search “{0}”', window.getSelection()!.toString().slice(0, 24)), icon: <Search size={14} />, onClick: () => setQuery(window.getSelection()!.toString()) },
+      alert && !isViewer() && {
+        label: window.getSelection()?.toString().trim() ? tr('Create alert from selection…') : tr('Create alert from this line…'),
+        icon: <BellPlus size={14} />,
+        onClick: () => createAlert(l, window.getSelection()?.toString() ?? ''),
+      },
       l.c && { label: only ? tr('Show all services') : tr('Only {0}', l.c), onClick: () => setOnly(only ? null : l.c!) },
       { label: tr('Errors and warnings only'), checked: onlyErr, onClick: () => setOnlyErr(!onlyErr) },
       { label: tr('Timestamps'), checked: ts, onClick: () => setTs(!ts) },
