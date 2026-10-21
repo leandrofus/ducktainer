@@ -1,0 +1,17 @@
+# pacman hooks: the same scripts as the rpm and deb packages, which take the
+# rpm's argument (1 = install, 2 = upgrade, 0 = erase).
+post_install() {
+	sh /usr/share/ducktainer/postinstall.sh 1
+}
+
+post_upgrade() {
+	sh /usr/share/ducktainer/postinstall.sh 2
+}
+
+pre_remove() {
+	sh /usr/share/ducktainer/preremove.sh 0
+}
+
+post_remove() {
+	sh /usr/share/ducktainer/postremove.sh 0
+}
