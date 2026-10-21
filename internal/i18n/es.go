@@ -3,6 +3,7 @@ package i18n
 // es is the Spanish catalog: English format -> Spanish format.
 // Keep keys identical to the English strings in the code.
 var es = map[string]string{
+	"enter the image": "introduce la imagen",
 	"not an IP address or resolvable hostname: %s":                                           "no es una dirección IP ni un nombre de host resoluble: %s",
 	"\n  Docker API exposed on %s\n":                                                         "\n  API de Docker expuesta en %s\n",
 	"\n  From another ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n": "\n  Desde otro ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n",
@@ -347,5 +348,4 @@ var es = map[string]string{
 	"on Windows the service is installed by the MSI package (ducktainer-<version>-x64.msi, on the releases page)": "en Windows el servicio lo instala el paquete MSI (ducktainer-<versión>-x64.msi, en la página de releases)",
 	"`ducktainer engine relay` only runs on Windows":                                                              "`ducktainer engine relay` solo funciona en Windows",
 	"Windows accounts (LogonUser)":                                                                                "cuentas de Windows (LogonUser)",
-	"enter the image":                                                                                             "introduce la imagen",
 }
