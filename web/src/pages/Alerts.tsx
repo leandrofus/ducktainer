@@ -45,7 +45,7 @@ function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => 
   const hosts = useResource<Endpoint[]>('/endpoints').data || []
   const channels = useResource<{ rules: AlertRule[]; channels: AlertChannel[] }>('/alerts/config').data?.channels || []
   const [f, setF] = useState<AlertRule>(
-    initial ?? { id: '', name: '', kind: 'host_down', enabled: true, for_seconds: 60, cooldown_minutes: 5, pattern: ERROR_PATTERN },
+    initial ?? { id: '', name: '', kind: 'host_down', enabled: true, for_seconds: 60, cooldown_minutes: 5, patterns: [ERROR_PATTERN] },
   )
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<AlertRule>) => setF({ ...f, ...p })
@@ -63,7 +63,7 @@ function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => 
           <button className="btn" onClick={onClose}>{tr('Cancel')}</button>
           <button
             className="btn btn-primary"
-            disabled={busy || !f.name.trim() || (f.kind === 'log_match' && !f.pattern?.trim())}
+            disabled={busy || !f.name.trim() || (f.kind === 'log_match' && !f.patterns?.some((x) => x.trim()))}
             onClick={async () => {
               setBusy(true)
               try {
@@ -98,13 +98,17 @@ function RuleDialog({ initial, onClose }: { initial?: AlertRule; onClose: () => 
       {f.kind === 'log_match' ? (
         <>
           <label className="field" style={{ marginTop: 12 }}>
-            <span>{tr('Regular expression')}</span>
-            <input className="mono" value={f.pattern || ''} onChange={(e) => set({ pattern: e.target.value })} />
+            <span>{tr('Regular expressions (one per line)')}</span>
+            <textarea className="mono" rows={3} value={(f.patterns || []).join('\n')} onChange={(e) => set({ patterns: e.target.value.split('\n') })} />
           </label>
           <div className="row gap" style={{ marginTop: 4 }}>
-            <button type="button" className="btn btn-sm" onClick={() => set({ pattern: ERROR_PATTERN })}>{tr('Errors preset')}</button>
-            <span className="help grow">{tr('Matched against each log line of the running containers. Start it with (?i) to ignore case.')}</span>
+            <button type="button" className="btn btn-sm" onClick={() => set({ patterns: [...(f.patterns || []).filter((x) => x.trim() && x !== ERROR_PATTERN), ERROR_PATTERN] })}>{tr('Errors preset')}</button>
+            <span className="help grow">{tr('A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.')}</span>
           </div>
+          <label className="field" style={{ marginTop: 12 }}>
+            <span>{tr('Exclusions (one per line)')}</span>
+            <textarea className="mono" rows={2} value={(f.exclude || []).join('\n')} placeholder="healthcheck" onChange={(e) => set({ exclude: e.target.value.split('\n') })} />
+          </label>
           <div className="grid-2" style={{ marginTop: 12 }}>
             <label className="field">
               <span>{tr('Containers')}</span>
@@ -329,7 +333,7 @@ function Rules() {
                   <td><strong>{r.name}</strong></td>
                   <td>{KIND_LABEL[r.kind] ?? r.kind}</td>
                   <td className="small">{r.endpoints?.length ? r.endpoints.join(', ') : <span className="muted">{tr('All')}</span>}</td>
-                  <td className="small mono">{r.kind === 'log_match' ? r.pattern : tr('after {0}s', String(r.for_seconds ?? 0))}</td>
+                  <td className="small mono">{r.kind === 'log_match' ? (r.patterns || []).join('  |  ') : tr('after {0}s', String(r.for_seconds ?? 0))}</td>
                   <td>
                     <button className={`switch${r.enabled ? ' on' : ''}`} aria-label={tr('Active')} onClick={() => save({ ...r, enabled: !r.enabled })}><span /></button>
                   </td>

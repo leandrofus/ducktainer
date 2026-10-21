@@ -1446,7 +1446,6 @@ export const es: Record<string, string> = {
   "Host down": "Host caído",
   "Hosts and agents are fine according to your rules.": "Los hosts y agentes están bien según tus reglas.",
   "Log pattern": "Patrón en logs",
-  "Matched against each log line of the running containers. Start it with (?i) to ignore case.": "Se compara con cada línea de log de los contenedores en marcha. Empieza con (?i) para ignorar mayúsculas.",
   "Minutes between alerts of the same container": "Minutos entre alertas del mismo contenedor",
   "New alert rule": "Nueva regla de alerta",
   "New channel": "Nuevo canal",
@@ -1456,7 +1455,6 @@ export const es: Record<string, string> = {
   "No rules": "Sin reglas",
   "None": "Ninguna",
   "Nothing is firing": "Nada disparado",
-  "Regular expression": "Expresión regular",
   "Rule": "Regla",
   "Rules": "Reglas",
   "SMTP server": "Servidor SMTP",
@@ -1473,4 +1471,7 @@ export const es: Record<string, string> = {
   "event": "evento",
   "firing": "activa",
   "resolved": "resuelta",
+  "Regular expressions (one per line)": "Expresiones regulares (una por línea)",
+  "Exclusions (one per line)": "Exclusiones (una por línea)",
+  "A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.": "Una línea de log alerta si coincide cualquiera de ellas, salvo que también coincida una exclusión. Empieza una con (?i) para ignorar mayúsculas.",
 }

@@ -61,14 +61,19 @@ func (s *Server) saveAlertRule(w http.ResponseWriter, r *http.Request) {
 		if rule.ForSeconds < 0 {
 			rule.ForSeconds = 0
 		}
-		rule.Pattern, rule.Containers, rule.CooldownMinutes = "", nil, 0
+		rule.Patterns, rule.Exclude, rule.Containers, rule.CooldownMinutes = nil, nil, nil, 0
 	case "log_match":
-		if strings.TrimSpace(rule.Pattern) == "" {
+		var err error
+		if rule.Patterns, err = cleanPatterns(rule.Patterns); err != nil {
+			writeErr(w, err)
+			return
+		}
+		if len(rule.Patterns) == 0 {
 			writeErr(w, badRequest("enter the regular expression"))
 			return
 		}
-		if _, err := regexp.Compile(rule.Pattern); err != nil {
-			writeErr(w, badRequest("invalid regular expression: %v", err))
+		if rule.Exclude, err = cleanPatterns(rule.Exclude); err != nil {
+			writeErr(w, err)
 			return
 		}
 		if rule.CooldownMinutes <= 0 {
@@ -261,4 +266,19 @@ func (s *Server) testAlertChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]bool{"ok": true})
+}
+
+// cleanPatterns drops empty entries and rejects invalid regular expressions.
+func cleanPatterns(in []string) ([]string, error) {
+	var out []string
+	for _, p := range in {
+		if strings.TrimSpace(p) == "" {
+			continue
+		}
+		if _, err := regexp.Compile(p); err != nil {
+			return nil, badRequest("invalid regular expression: %v", err)
+		}
+		out = append(out, p)
+	}
+	return out, nil
 }

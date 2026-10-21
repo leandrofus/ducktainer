@@ -1454,7 +1454,6 @@ export const ru: Record<string, string> = {
   "Host down": "Хост недоступен",
   "Hosts and agents are fine according to your rules.": "Хосты и агенты в порядке согласно вашим правилам.",
   "Log pattern": "Шаблон в логах",
-  "Matched against each log line of the running containers. Start it with (?i) to ignore case.": "Сопоставляется с каждой строкой лога запущенных контейнеров. Начните с (?i), чтобы игнорировать регистр.",
   "Minutes between alerts of the same container": "Минут между оповещениями об одном контейнере",
   "New alert rule": "Новое правило оповещения",
   "New channel": "Новый канал",
@@ -1464,7 +1463,6 @@ export const ru: Record<string, string> = {
   "No rules": "Нет правил",
   "None": "Нет",
   "Nothing is firing": "Ничего не сработало",
-  "Regular expression": "Регулярное выражение",
   "Rule": "Правило",
   "Rules": "Правила",
   "SMTP server": "SMTP-сервер",
@@ -1481,4 +1479,7 @@ export const ru: Record<string, string> = {
   "event": "событие",
   "firing": "активно",
   "resolved": "устранено",
+  "Regular expressions (one per line)": "Регулярные выражения (по одному в строке)",
+  "Exclusions (one per line)": "Исключения (по одному в строке)",
+  "A log line alerts when any of them matches, unless an exclusion matches too. Start one with (?i) to ignore case.": "Строка лога вызывает оповещение, если подходит любое из выражений и не подходит ни одно исключение. Начните выражение с (?i), чтобы игнорировать регистр.",
 }

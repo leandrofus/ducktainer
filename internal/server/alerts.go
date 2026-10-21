@@ -56,7 +56,36 @@ type alertEntry struct {
 
 type compiledRule struct {
 	config.AlertRule
-	re *regexp.Regexp
+	re, skip []*regexp.Regexp
+}
+
+func (r compiledRule) matches(line string) bool {
+	for _, x := range r.skip {
+		if x.MatchString(line) {
+			return false
+		}
+	}
+	for _, x := range r.re {
+		if x.MatchString(line) {
+			return true
+		}
+	}
+	return false
+}
+
+func compileAll(list []string) ([]*regexp.Regexp, error) {
+	var out []*regexp.Regexp
+	for _, p := range list {
+		if strings.TrimSpace(p) == "" {
+			continue
+		}
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, re)
+	}
+	return out, nil
 }
 
 func (r compiledRule) covers(endpoint, container string) bool {
@@ -130,11 +159,13 @@ func (a *alerter) loadRules() {
 			}
 			c := compiledRule{AlertRule: r}
 			if r.Kind == "log_match" {
-				re, err := regexp.Compile(r.Pattern)
-				if err != nil {
+				var err error
+				if c.re, err = compileAll(r.Patterns); err != nil || len(c.re) == 0 {
 					continue
 				}
-				c.re = re
+				if c.skip, err = compileAll(r.Exclude); err != nil {
+					continue
+				}
 			}
 			out = append(out, c)
 		}
@@ -412,7 +443,7 @@ func (a *alerter) follow(ctx context.Context, c *docker.Client, ep, id, name str
 
 func (a *alerter) matchLine(ep, name, msg string) {
 	for _, r := range a.ruleList() {
-		if r.Kind != "log_match" || r.re == nil || !r.covers(ep, name) || !r.re.MatchString(msg) {
+		if r.Kind != "log_match" || !r.covers(ep, name) || !r.matches(msg) {
 			continue
 		}
 		key := r.ID + "|" + ep + "|" + name

@@ -172,8 +172,10 @@ type AlertRule struct {
 	Endpoints []string `json:"endpoints,omitempty"`
 	// Containers (log_match): name globs such as "web-*" (empty: all).
 	Containers []string `json:"containers,omitempty"`
-	// Pattern (log_match) is a regular expression matched against each log line.
-	Pattern string `json:"pattern,omitempty"`
+	// Patterns (log_match) are regular expressions: a log line alerts when
+	// any matches and no Exclude does.
+	Patterns []string `json:"patterns,omitempty"`
+	Exclude  []string `json:"exclude,omitempty"`
 	// ForSeconds (host_down, agent_offline): how long it must stay down before firing.
 	ForSeconds int `json:"for_seconds,omitempty"`
 	// CooldownMinutes (log_match): minimum time between alerts of the same container.
@@ -594,6 +596,8 @@ func (c *Config) clone() *Config {
 		for i, r := range c.Alerts.Rules {
 			r.Endpoints = append([]string(nil), r.Endpoints...)
 			r.Containers = append([]string(nil), r.Containers...)
+			r.Patterns = append([]string(nil), r.Patterns...)
+			r.Exclude = append([]string(nil), r.Exclude...)
 			r.Channels = append([]string(nil), r.Channels...)
 			al.Rules[i] = r
 		}

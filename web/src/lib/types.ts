@@ -378,7 +378,8 @@ export interface AlertRule {
   enabled: boolean
   endpoints?: string[]
   containers?: string[]
-  pattern?: string
+  patterns?: string[]
+  exclude?: string[]
   for_seconds?: number
   cooldown_minutes?: number
   channels?: string[]

@@ -83,11 +83,12 @@ func TestLogRuleMatchesAndCoolsDown(t *testing.T) {
 	h, url := newHook(t)
 	a := alertTestServer(t, []config.AlertRule{{
 		ID: "r1", Name: "errors", Kind: "log_match", Enabled: true,
-		Pattern: `(?i)\berror\b`, Containers: []string{"web-*"}, CooldownMinutes: 5,
+		Patterns: []string{`(?i)\berror\b`, `OOM`}, Exclude: []string{`healthcheck`}, Containers: []string{"web-*"}, CooldownMinutes: 5,
 	}}, url)
 
-	a.matchLine("local", "db", "ERROR: not watched") // container outside the globs
-	a.matchLine("local", "web-1", "all fine")        // no match
+	a.matchLine("local", "db", "ERROR: not watched")      // container outside the globs
+	a.matchLine("local", "web-1", "all fine")             // no match
+	a.matchLine("local", "web-1", "error in healthcheck") // excluded
 	h.none(t)
 
 	a.matchLine("local", "web-1", "2026 ERROR connection refused")
@@ -99,8 +100,10 @@ func TestLogRuleMatchesAndCoolsDown(t *testing.T) {
 	h.none(t)
 	a.matchLine("local", "web-2", "error here") // another container has its own cooldown
 	h.next(t)
+	a.matchLine("local", "web-3", "killed by OOM") // second pattern
+	h.next(t)
 
-	if n := len(a.history(10)); n != 2 {
+	if n := len(a.history(10)); n != 3 {
 		t.Fatalf("history: %d entries", n)
 	}
 	if len(a.activeList()) != 0 {
