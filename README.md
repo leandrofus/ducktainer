@@ -163,6 +163,7 @@ Hosts can also be managed from **Settings → Hosts**, and you switch between th
 
 - Each agent host has its own token, valid only for that host; the admin token is not accepted from agents. The install command sends it in a header, pins this server's certificate (no `--insecure`), installs the agent as a systemd service and leaves the token on the node in `/etc/ducktainer-agent/agent.env` (root only). Hosts registered by earlier versions with the admin token are refused until you give them a token in Settings → Hosts and reinstall the agent.
 - If agents can't reach the allowlisted port, `serve --agent-listen :9901` opens a port only for agents (token required, no IP allowlist).
+- Agents keep themselves at the server's version: when it changes they download the new binary, check that it runs on the node and restart into it, keeping the current one if anything fails (turn it off per host in Settings → Hosts; builds marked `dev` and Windows never update themselves). The packages carry static agent binaries for amd64 and arm64, so nodes need no particular glibc (RHEL 8 works) and can be of another architecture than the server. Agents installed before this version must be reinstalled once.
 - `tcp://` hosts must use TLS unless they are on the same machine; without `--fingerprint`, the certificate presented when the host is added is pinned.
 - SSH hosts record the host key on the first connection (`StrictHostKeyChecking=accept-new`); a changed key is refused.
 - Registry credentials can be limited to some hosts (`--hosts`, or in the UI): compose runs on a node get a copy of the credentials they are allowed to see.
@@ -271,3 +272,7 @@ Layout:
 - `packaging/`: systemd units, PAM files, nfpm.
 - `web/`: React + Vite.
 - `site/`: the website (Astro).
+
+## License
+
+ducktainer is free software under the **GNU Affero General Public License, version 3 or (at your option) any later version** (`AGPL-3.0-or-later`). The full text is in [`LICENSE`](LICENSE).

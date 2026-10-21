@@ -1,0 +1,5 @@
+#%PAM-1.0
+# ducktainer web login (Arch Linux): same policy as local logins.
+auth       include      system-auth
+account    required     pam_nologin.so
+account    include      system-auth

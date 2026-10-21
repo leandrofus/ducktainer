@@ -30,6 +30,9 @@ type Endpoint struct {
 	// Fingerprint pins the remote certificate (sha256, hex). Empty with TLS
 	// on means "accept any" (still encrypted, not authenticated).
 	Fingerprint string `json:"fingerprint,omitempty"`
+	// NoAutoUpdate (agent hosts) keeps the agent from following the server's
+	// version; by default it updates itself when the versions differ.
+	NoAutoUpdate bool `json:"no_auto_update,omitempty"`
 	// SSHKey is an optional identity file for ssh endpoints.
 	SSHKey string `json:"ssh_key,omitempty"`
 	// DockerSocket is the daemon socket path on the node itself, mounted

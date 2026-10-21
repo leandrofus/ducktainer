@@ -163,6 +163,7 @@ Los hosts también se gestionan desde **Configuración → Hosts**, y se cambia 
 
 - Cada host con agente tiene su propio token, válido solo para ese host; el token de administrador no se acepta desde agentes. El comando lo envía en una cabecera, fija el certificado de este servidor (sin `--insecure`), instala el agente como servicio systemd y deja el token en el nodo en `/etc/ducktainer-agent/agent.env` (solo root). Los hosts registrados por versiones anteriores con el token de administrador se rechazan hasta que les des un token en Configuración → Hosts y reinstales el agente.
 - Si los agentes no llegan al puerto protegido por la lista, `serve --agent-listen :9901` abre un puerto solo para agentes (con token, sin lista de IPs).
+- Los agentes se mantienen en la versión del servidor: cuando cambia, descargan el binario nuevo, comprueban que corre en el nodo y se reinician con él, conservando el actual si algo falla (se desactiva por host en Ajustes → Hosts; las compilaciones `dev` y Windows nunca se actualizan solas). Los paquetes incluyen binarios estáticos del agente para amd64 y arm64, así que los nodos no necesitan una glibc concreta (RHEL 8 funciona) y pueden ser de otra arquitectura que el servidor. Los agentes instalados antes de esta versión hay que reinstalarlos una vez.
 - Los hosts `tcp://` deben usar TLS salvo que estén en la misma máquina; sin `--fingerprint`, se fija el certificado que presenten al añadirlos.
 - Los hosts SSH registran la clave del host en la primera conexión (`StrictHostKeyChecking=accept-new`); una clave cambiada se rechaza.
 - Las credenciales de registries pueden limitarse a algunos hosts (`--hosts` o en la UI): compose ejecutado en un nodo recibe copia de las credenciales que ese host puede ver.
@@ -271,3 +272,7 @@ Estructura:
 - `packaging/`: units de systemd, archivos PAM, nfpm.
 - `web/`: React + Vite.
 - `site/`: el sitio web (Astro).
+
+## Licencia
+
+ducktainer es software libre bajo la **GNU Affero General Public License, versión 3 o (a tu elección) cualquier versión posterior** (`AGPL-3.0-or-later`). El texto completo está en [`LICENSE`](LICENSE).

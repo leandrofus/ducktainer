@@ -1504,4 +1504,8 @@ export const es: Record<string, string> = {
   "ducktainer listens only on 127.0.0.1, which no node can reach. Start it with --listen 0.0.0.0:9900 (and allow the node's network), or with --agent-listen :9901.": "ducktainer solo escucha en 127.0.0.1, que ningún nodo puede alcanzar. Arráncalo con --listen 0.0.0.0:9900 (y permite la red del nodo), o con --agent-listen :9901.",
   "On the node, localhost is the node itself: use one of this server's addresses.": "En el nodo, localhost es el propio nodo: usa una de las direcciones de este servidor.",
   "The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.": "El instalador comprueba antes el nodo (arquitectura, que alcanza este servidor, que el binario corre con su glibc) y no instala nada si una comprobación falla.",
+  "Update the agent automatically when the server's version changes": "Actualizar el agente automáticamente cuando cambie la versión del servidor",
+  "Agent {0}": "Agente {0}",
+  "behind the server ({0}); automatic update is off": "por detrás del servidor ({0}); la actualización automática está desactivada",
+  "updating to {0}…": "actualizando a {0}…",
 }

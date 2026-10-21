@@ -473,6 +473,7 @@ func cmdAgent(args []string) error {
 		Socket:      *socket,
 		Insecure:    *insecure,
 		Fingerprint: *fp,
+		Version:     version,
 	}
 
 	if *installService {
@@ -910,8 +911,13 @@ func cmdInstall(args []string) error {
 	// the old location of the binary
 	os.Remove("/usr/local/bin/ducktainer")
 	pamSrc := "pam/ducktainer.debian"
-	if _, err := os.Stat("/etc/pam.d/password-auth"); err == nil {
+	exists := func(p string) bool { _, err := os.Stat(p); return err == nil }
+	switch {
+	case exists("/etc/pam.d/password-auth"):
 		pamSrc = "pam/ducktainer.redhat"
+	case exists("/etc/pam.d/common-auth"):
+	case exists("/etc/pam.d/system-auth"): // Arch
+		pamSrc = "pam/ducktainer.arch"
 	}
 	if err := write(pamSrc, "/etc/pam.d/ducktainer", true); err != nil {
 		return err

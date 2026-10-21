@@ -1,0 +1,55 @@
+# Maintainer: ducktainer <ducktainer@localhost>
+# Builds ducktainer from the release tag, with PAM (sign-in with system users),
+# and ships the static agent binaries that nodes download.
+pkgname=ducktainer
+pkgver=1.8.0
+pkgrel=1
+pkgdesc='Agentless Docker management: web UI, compose stacks, marketplace, terminal and live logs'
+arch=('x86_64' 'aarch64')
+url='https://github.com/leandrofus/ducktainer'
+license=('AGPL-3.0-or-later')
+depends=('pam')
+optdepends=('docker: the engine it manages (any Docker-compatible one works, e.g. podman-docker)'
+            'docker-compose: compose stacks'
+            'openssh: hosts reached over SSH')
+makedepends=('go' 'npm' 'gcc')
+# the Go binaries are built stripped; strip cannot read the arm64 agent on an x86_64 build host
+options=('!strip' '!debug')
+backup=('etc/ducktainer/ducktainer.env' 'etc/pam.d/ducktainer')
+install=ducktainer.install
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  export GOFLAGS='-buildvcs=false -trimpath -mod=readonly' CGO_ENABLED=1
+  (cd web && npm install --no-audit --no-fund && npm run build)
+  go build -tags pam -ldflags "-s -w -X main.version=$pkgver" -o build/ducktainer .
+  # the agent binaries nodes download: static, so nodes need no particular glibc
+  for a in amd64 arm64; do
+    CGO_ENABLED=0 GOOS=linux GOARCH=$a go build -ldflags "-s -w -X main.version=$pkgver" -o "build/ducktainer-agent-linux-$a" .
+  done
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  go test ./internal/...
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 build/ducktainer "$pkgdir/usr/bin/ducktainer"
+  for a in amd64 arm64; do
+    install -Dm755 "build/ducktainer-agent-linux-$a" "$pkgdir/usr/lib/ducktainer/agent/ducktainer-agent-linux-$a"
+  done
+  for u in ducktainer.service ducktainer-pam.socket ducktainer-pam@.service; do
+    install -Dm644 "packaging/systemd/$u" "$pkgdir/usr/lib/systemd/system/$u"
+  done
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 packaging/ducktainer.env "$pkgdir/etc/ducktainer/ducktainer.env"
+  install -Dm644 packaging/pam/ducktainer.arch "$pkgdir/etc/pam.d/ducktainer"
+  # the same install scripts as the rpm and deb packages (see ducktainer.install)
+  for s in postinstall preremove; do
+    install -Dm755 "packaging/scripts/$s.sh" "$pkgdir/usr/share/ducktainer/$s.sh"
+  done
+}

@@ -1,0 +1,28 @@
+# pacman hooks. Install and upgrade run the same script as the rpm and deb
+# packages (it takes the rpm's argument: 1 = install, 2 = upgrade, 0 = erase).
+post_install() {
+	sh /usr/share/ducktainer/postinstall.sh 1
+}
+
+post_upgrade() {
+	sh /usr/share/ducktainer/postinstall.sh 2
+}
+
+pre_remove() {
+	sh /usr/share/ducktainer/preremove.sh 0
+}
+
+# pacman deletes the package's files before post_remove, so the clean-up of
+# packaging/scripts/postremove.sh (start menu entries; the data in
+# /var/lib/ducktainer and the ducktainer user are kept) is repeated here.
+post_remove() {
+	if [ -d /run/systemd/system ]; then
+		systemctl daemon-reload >/dev/null 2>&1 || true
+	fi
+	systemctl --global disable ducktainer-menu.path >/dev/null 2>&1 || true
+	rm -f /etc/systemd/user/ducktainer-menu.path /etc/systemd/user/ducktainer-menu.service
+	rm -rf /usr/local/share/applications/ducktainer-containers
+	rm -f /etc/xdg/menus/applications-merged/ducktainer-containers.menu \
+		/usr/local/share/desktop-directories/ducktainer-containers.directory \
+		/usr/local/share/icons/hicolor/scalable/apps/ducktainer.svg
+}
