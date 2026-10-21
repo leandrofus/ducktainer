@@ -90,6 +90,12 @@ func TestAgentInstallScriptAndBinary(t *testing.T) {
 		t.Fatalf("binary with ?token=: got %d, want 401", rec.Code)
 	}
 
+	if runtime.GOOS != "linux" {
+		// a server that does not run on Linux cannot hand out its own binary: it serves the static agent builds
+		dir := filepath.Join(config.Dir(), "agent")
+		os.MkdirAll(dir, 0o755)
+		os.WriteFile(filepath.Join(dir, "ducktainer-agent-linux-"+runtime.GOARCH), []byte("static"), 0o755)
+	}
 	rec := get(handler, "/api/agent/binary", "edge-token")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("binary with the host token: got %d, want 200", rec.Code)
@@ -209,8 +215,13 @@ func TestInstallScriptChecksBeforeTouchingTheNode(t *testing.T) {
 			t.Errorf("%q must run before the node is modified", step)
 		}
 	}
-	if !strings.Contains(script, `case " `+runtime.GOARCH+` " in`) || !strings.Contains(script, "binary?arch=$ARCH") {
+	if !strings.Contains(script, "binary?arch=$ARCH") || !strings.Contains(script, "provides agent binaries for") {
 		t.Error("the architecture check is missing")
+	}
+	// a Linux server offers its own architecture; one that does not run on Linux
+	// has nothing to offer unless static agent binaries are installed
+	if runtime.GOOS == "linux" && !strings.Contains(script, `case " `+runtime.GOARCH+` " in`) {
+		t.Errorf("the server's own architecture is not offered:\n%s", script)
 	}
 }
 

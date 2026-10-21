@@ -120,6 +120,14 @@ func agentArchs() []string {
 	return out
 }
 
+// offeredArchs describes what agentArchs found, for the installer's message.
+func offeredArchs() string {
+	if a := agentArchs(); len(a) > 0 {
+		return strings.Join(a, ", ")
+	}
+	return "none (a server that does not run on Linux needs the static agent binaries in " + agentBinDirs()[0] + ")"
+}
+
 // serveAgentBinary hands the agent binary to an enrolled node (any agent
 // token); ?arch= picks the architecture (default: this server's).
 func (s *Server) serveAgentBinary(w http.ResponseWriter, r *http.Request) {
@@ -309,7 +317,7 @@ systemctl daemon-reload
 systemctl enable ducktainer-agent >/dev/null 2>&1
 systemctl restart ducktainer-agent
 echo "ducktainer-agent is running: systemctl status ducktainer-agent"
-`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), strings.Join(agentArchs(), " "), strings.Join(agentArchs(), ", "), curlTLS)
+`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), strings.Join(agentArchs(), " "), offeredArchs(), curlTLS)
 
 	w.Header().Set("Content-Type", "text/x-shellscript; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
