@@ -31,6 +31,7 @@ type Config struct {
 	Socket      string // path to local docker socket (default "/var/run/docker.sock")
 	Insecure    bool   // skip TLS certificate validation
 	Fingerprint string // expected sha256 fingerprint of the server certificate
+	Version     string // this build's version; enables the automatic update ("dev" does not)
 }
 
 // Run runs the standalone agent, maintaining a persistent outbound tunnel to
@@ -72,6 +73,8 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	log.Printf("[agent] starting agent %q -> %s", cfg.Name, cfg.Server)
+
+	go autoUpdate(ctx, cfg, tlsConf)
 
 	backoff := 2 * time.Second
 	for {
@@ -154,6 +157,7 @@ func connectAndServe(ctx context.Context, wsURL string, tlsConf *tls.Config, cfg
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+cfg.Token)
 	header.Set("X-Agent-Name", cfg.Name)
+	header.Set("X-Agent-Version", cfg.Version)
 
 	ws, resp, err := dialer.DialContext(ctx, wsURL, header)
 	if err != nil {

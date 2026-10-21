@@ -15,6 +15,7 @@ type Hub struct {
 	mu       sync.RWMutex
 	sessions map[string]*yamux.Session
 	addrs    map[string]string // address each agent connected from
+	versions map[string]string // version each agent reported
 }
 
 // DefaultHub is the singleton agent hub used by the ducktainer server and client.
@@ -24,6 +25,7 @@ func NewHub() *Hub {
 	return &Hub{
 		sessions: make(map[string]*yamux.Session),
 		addrs:    make(map[string]string),
+		versions: make(map[string]string),
 	}
 }
 
@@ -44,6 +46,23 @@ func (h *Hub) SetAddr(name, addr string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.addrs[name] = addr
+}
+
+// SetVersion records the version an agent reported.
+func (h *Hub) SetVersion(name, version string) {
+	if version == "" {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.versions[name] = version
+}
+
+// Version returns the version recorded by SetVersion ("" if never reported).
+func (h *Hub) Version(name string) string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.versions[name]
 }
 
 // Addr returns the address recorded by SetAddr.

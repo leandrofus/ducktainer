@@ -1512,4 +1512,8 @@ export const ru: Record<string, string> = {
   "ducktainer listens only on 127.0.0.1, which no node can reach. Start it with --listen 0.0.0.0:9900 (and allow the node's network), or with --agent-listen :9901.": "ducktainer слушает только 127.0.0.1, недоступный узлам. Запустите его с --listen 0.0.0.0:9900 (и разрешите сеть узла) или с --agent-listen :9901.",
   "On the node, localhost is the node itself: use one of this server's addresses.": "На узле localhost — это сам узел: используйте один из адресов этого сервера.",
   "The installer checks the node first (architecture, that it reaches this server, that the binary runs with its glibc) and installs nothing if a check fails.": "Установщик сначала проверяет узел (архитектуру, доступность этого сервера, запуск бинарника с его glibc) и ничего не устанавливает, если проверка не пройдена.",
+  "Update the agent automatically when the server's version changes": "Автоматически обновлять агент при смене версии сервера",
+  "Agent {0}": "Агент {0}",
+  "behind the server ({0}); automatic update is off": "отстаёт от сервера ({0}); автообновление отключено",
+  "updating to {0}…": "обновляется до {0}…",
 }

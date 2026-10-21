@@ -209,7 +209,63 @@ func TestInstallScriptChecksBeforeTouchingTheNode(t *testing.T) {
 			t.Errorf("%q must run before the node is modified", step)
 		}
 	}
-	if !strings.Contains(script, `[ "$ARCH" = "`+runtime.GOARCH+`" ]`) {
+	if !strings.Contains(script, `case " `+runtime.GOARCH+` " in`) || !strings.Contains(script, "binary?arch=$ARCH") {
 		t.Error("the architecture check is missing")
+	}
+}
+
+func TestAgentGetsTheStaticBinaryForItsArchitecture(t *testing.T) {
+	srv, cfg, cleanup := newTestServer(t)
+	defer cleanup()
+	addAgentHost(t, cfg, "edge-node", "edge-token")
+	dir := filepath.Join(config.Dir(), "agent")
+	os.MkdirAll(dir, 0o755)
+	os.WriteFile(filepath.Join(dir, "ducktainer-agent-linux-arm64"), []byte("static-arm64"), 0o755)
+	h := srv.Handler()
+
+	// an architecture only the static build covers
+	rec := get(h, "/api/agent/binary?arch=arm64", "edge-token")
+	if rec.Code != http.StatusOK || rec.Body.String() != "static-arm64" {
+		t.Fatalf("arm64: %d %q", rec.Code, rec.Body.String())
+	}
+	if rec := get(h, "/api/agent/binary?arch=riscv64", "edge-token"); rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown arch: %d", rec.Code)
+	}
+	// the installer offers what the server can provide
+	script := get(h, "/api/agent/install.sh", "edge-token").Body.String()
+	if !strings.Contains(script, "arm64") {
+		t.Fatalf("install script does not offer arm64:\n%s", script)
+	}
+	// a static build wins over the server's own binary
+	own := filepath.Join(dir, "ducktainer-agent-linux-"+runtime.GOARCH)
+	os.WriteFile(own, []byte("static-own"), 0o755)
+	if rec := get(h, "/api/agent/binary", "edge-token"); rec.Body.String() != "static-own" {
+		t.Fatalf("default arch: %q", rec.Body.String())
+	}
+}
+
+func TestAgentVersionEndpoint(t *testing.T) {
+	srv, cfg, cleanup := newTestServer(t)
+	defer cleanup()
+	srv.Version = "1.7.1"
+	addAgentHost(t, cfg, "edge-node", "edge-token")
+	h := srv.Handler()
+	if rec := get(h, "/api/agent/version", ""); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("without token: %d", rec.Code)
+	}
+	rec := get(h, "/api/agent/version", "edge-token")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"version":"1.7.1"`) || !strings.Contains(rec.Body.String(), `"auto":true`) {
+		t.Fatalf("answer: %d %s", rec.Code, rec.Body.String())
+	}
+	cfg.Update(func(c *config.Config) error {
+		for i := range c.Endpoints {
+			if c.Endpoints[i].Name == "edge-node" {
+				c.Endpoints[i].NoAutoUpdate = true
+			}
+		}
+		return nil
+	})
+	if rec := get(h, "/api/agent/version", "edge-token"); !strings.Contains(rec.Body.String(), `"auto":false`) {
+		t.Fatalf("opted out: %s", rec.Body.String())
 	}
 }

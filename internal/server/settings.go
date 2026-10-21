@@ -30,6 +30,8 @@ type endpointStatus struct {
 	OS      string `json:"os,omitempty"`
 	Running int    `json:"running"`
 	Total   int    `json:"total"`
+	// AgentVersion is what the connected agent reported (agent hosts).
+	AgentVersion string `json:"agent_version,omitempty"`
 }
 
 // listEndpoints returns the configured endpoints with live status; secrets
@@ -43,6 +45,9 @@ func (s *Server) listEndpoints(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			defer wg.Done()
 			st := endpointStatus{Endpoint: ep}
+			if ep.Agent() {
+				st.AgentVersion = agent.DefaultHub.Version(ep.Name)
+			}
 			st.Token = ""
 			if ep.Token != "" {
 				st.Token = "••••"

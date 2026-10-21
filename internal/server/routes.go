@@ -13,6 +13,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 
 	// agent endpoints
 	mux.HandleFunc("GET /api/agent/binary", s.serveAgentBinary)
+	mux.HandleFunc("GET /api/agent/version", s.agentVersion)
 	mux.HandleFunc("GET /api/agent/install.sh", s.serveAgentInstallScript)
 	mux.HandleFunc("GET /api/agent/tunnel", s.handleAgentTunnel)
 

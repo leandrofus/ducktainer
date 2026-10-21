@@ -473,6 +473,7 @@ func cmdAgent(args []string) error {
 		Socket:      *socket,
 		Insecure:    *insecure,
 		Fingerprint: *fp,
+		Version:     version,
 	}
 
 	if *installService {

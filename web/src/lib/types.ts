@@ -135,6 +135,8 @@ export interface Endpoint {
   ssh_key?: string
   docker_socket?: string
   compose_image?: string
+  no_auto_update?: boolean
+  agent_version?: string
   online: boolean
   error?: string
   version?: string

@@ -5,7 +5,7 @@ import { api, enc } from '../lib/api'
 import type { Endpoint, Registry } from '../lib/types'
 import { useResource, invalidate } from '../lib/store'
 import { copy, dateTime } from '../lib/format'
-import { isViewer } from '../lib/session'
+import { getMe, isViewer } from '../lib/session'
 import { AccessSettings } from './AccessSettings'
 import { CloudflareSettings } from '../components/Expose'
 import { go } from '../lib/router'
@@ -116,6 +116,7 @@ function EndpointDialog({ initial, onClose }: { initial?: Endpoint; onClose: () 
       ssh_key: initial?.ssh_key ?? '',
       docker_socket: initial?.docker_socket ?? '',
       compose_image: initial?.compose_image ?? '',
+      no_auto_update: initial?.no_auto_update ?? false,
     }
   })
   const [busy, setBusy] = useState(false)
@@ -188,6 +189,9 @@ function EndpointDialog({ initial, onClose }: { initial?: Endpoint; onClose: () 
         {scheme === 'agent' && (
           <div className="span-2">
             <div className="field">
+              <label className="check" style={{ marginBottom: 8 }}>
+                <input type="checkbox" checked={!f.no_auto_update} onChange={(e) => setF({ ...f, no_auto_update: !e.target.checked })} /> {tr('Update the agent automatically when the server\'s version changes')}
+              </label>
               <span>{tr('Agent token')}</span>
               <div className="row gap">
                 <input className="mono grow" value={f.token} onChange={(e) => setF({ ...f, token: e.target.value })} placeholder="token" />
@@ -261,6 +265,14 @@ function Hosts() {
               <div className="small">{e.os} · Docker {e.version} · {e.running}/{e.total} {tr('containers')}</div>
             ) : (
               <div className="small tone-bad">{e.error}</div>
+            )}
+            {e.url.startsWith('agent://') && e.agent_version && (
+              <div className="small muted">
+                {tr('Agent {0}', e.agent_version)}
+                {getMe()?.version && getMe()!.version !== 'dev' && e.agent_version !== getMe()!.version && (
+                  <> · <span className="tone-warn">{e.no_auto_update ? tr('behind the server ({0}); automatic update is off', getMe()!.version!) : tr('updating to {0}…', getMe()!.version!)}</span></>
+                )}
+              </div>
             )}
           </div>
         ))}

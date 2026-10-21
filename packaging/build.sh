@@ -7,6 +7,14 @@ set -eu
 : "${ARCHES:=amd64 arm64}"
 export HOME=/tmp GOCACHE=/tmp/gocache GOPATH=/tmp/gopath GOFLAGS=-buildvcs=false
 mkdir -p dist/build dist/packages
+# The agent binaries nodes download: static (no cgo, so no glibc requirement:
+# RHEL 8 and older nodes run them) and one per architecture, whatever the
+# architecture of the server, so every package carries both.
+for arch in amd64 arm64; do
+	echo "→ go build linux/$arch (static agent)"
+	CGO_ENABLED=0 GOOS=linux GOARCH=$arch \
+		go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o "dist/build/ducktainer-agent-linux-$arch" .
+done
 for arch in $ARCHES; do
 	case $arch in
 	amd64) cc=gcc ;;
@@ -23,6 +31,11 @@ for arch in $ARCHES; do
 	done
 done
 ls -l dist/packages
+# guard: the agent binaries nodes download must be static (no dynamic loader, no glibc)
+for f in dist/build/ducktainer-agent-linux-*; do
+	if readelf -l "$f" | grep -q INTERP; then echo "$f is not static" >&2; exit 1; fi
+	echo "$f estático"
+done
 # guard: the highest glibc symbol version required must stay ≤ 2.34 (RHEL 9)
 for f in dist/build/ducktainer-linux-*; do
 	max=$(strings "$f" | grep -o 'GLIBC_2\.[0-9]*' | sort -t. -k2 -n | tail -1)

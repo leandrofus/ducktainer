@@ -39,6 +39,13 @@ contents:
   - src: ./dist/build/ducktainer-linux-${ARCH}
     dst: /usr/bin/ducktainer
     file_info: { mode: 0755 }
+  # static agent binaries for nodes (any architecture, no glibc requirement)
+  - src: ./dist/build/ducktainer-agent-linux-amd64
+    dst: /usr/lib/ducktainer/agent/ducktainer-agent-linux-amd64
+    file_info: { mode: 0755 }
+  - src: ./dist/build/ducktainer-agent-linux-arm64
+    dst: /usr/lib/ducktainer/agent/ducktainer-agent-linux-arm64
+    file_info: { mode: 0755 }
   - src: ./packaging/systemd/ducktainer.service
     dst: /usr/lib/systemd/system/ducktainer.service
   - src: ./packaging/systemd/ducktainer-pam.socket
