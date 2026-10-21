@@ -8,7 +8,7 @@ import { copy, hue } from '../lib/format'
 import { useMenu } from '../ui/ContextMenu'
 import { usePref } from '../lib/prefs'
 import { isViewer } from '../lib/session'
-import { suggestPattern } from '../lib/regex'
+import { suggestPattern, trimLeadingStamp } from '../lib/regex'
 import { openDialog } from '../ui/overlays'
 import { RuleDialog } from '../pages/Alerts'
 
@@ -121,7 +121,8 @@ export function LogViewer({ path, multi, height, alert }: { path: string; multi?
 
   // a rule from the selected text (or the whole line), checked against what is on screen
   const createAlert = (l: LogLine, selected: string) => {
-    const seed = (selected || strip(l.m)).trim().slice(0, 300)
+    // a selection is used as is; a whole line loses its leading date
+    const seed = (selected.trim() || trimLeadingStamp(strip(l.m))).trim().slice(0, 300)
     const container = alert!.container(l.c)
     openDialog((close) => (
       <RuleDialog

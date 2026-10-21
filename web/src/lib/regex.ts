@@ -1,7 +1,15 @@
 // Builds a regular expression (Go/RE2 syntax, which is what the alert
 // engine uses) from a piece of a log line.
 
-const escape = (s: string) => s.replace(/[\\^$.|?*+()[\]{}]/g, '\\$&')
+// whitespace runs match any amount of whitespace (columns are often padded)
+const escape = (s: string) => s.replace(/[\\^$.|?*+()[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+')
+
+/** Drops the date/clock a log line starts with: it changes every time and
+ * says nothing about the event. Returns the line unchanged if nothing else is left. */
+export function trimLeadingStamp(line: string): string {
+  const rest = line.replace(/^[\s[(]*\d[\d\s:./\-T,Z+]*[\])]?\s*/, '')
+  return rest.trim() ? rest : line
+}
 
 // the parts of a line that change from one occurrence to the next
 const VARIABLE: [RegExp, string][] = [
@@ -10,7 +18,8 @@ const VARIABLE: [RegExp, string][] = [
   [/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b/, '\\d{1,3}(\\.\\d{1,3}){3}(:\\d+)?'],
   [/\b0x[0-9a-fA-F]+\b/, '0x[0-9a-fA-F]+'],
   [/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{12,}\b/, '[0-9a-f]{12,}'],
-  [/\d+/, '\\d+'],
+  // numbers, also chained with : . / - (clocks, dates, dotted versions in any format)
+  [/\d+(?:[:./-]\d+)*/, '\\d+([:./-]\\d+)*'],
 ]
 const TOKEN = new RegExp(VARIABLE.map(([re]) => `(${re.source})`).join('|'), 'g')
 
