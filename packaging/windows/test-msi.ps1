@@ -66,6 +66,9 @@ $svc = Get-Service ducktainer
 Check ($svc.Status -eq 'Running') "service installed and running ($($svc.Status))"
 Check ((Get-CimInstance Win32_Service -Filter "Name='ducktainer'").StartName -eq 'LocalSystem') 'runs as LocalSystem'
 Check (Test-Path $exe) "binary in $exe"
+if (Test-Path "$env:ProgramFiles\ducktainer\agent") {
+  Check ((Test-Path "$env:ProgramFiles\ducktainer\agent\ducktainer-agent-linux-amd64") -and (Test-Path "$env:ProgramFiles\ducktainer\agent\ducktainer-agent-linux-arm64")) 'the static Linux agents are installed'
+}
 Check (([Environment]::GetEnvironmentVariable('PATH', 'Machine') -split ';') -contains "$env:ProgramFiles\ducktainer\") 'install folder on the machine PATH'
 $info = WaitUp
 Check ($info.os -eq 'windows' -and $info.pam -eq $true) "sign-in with Windows accounts on by default ($($info | ConvertTo-Json -Compress))"

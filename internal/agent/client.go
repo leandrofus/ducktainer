@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -55,11 +54,11 @@ func Run(ctx context.Context, cfg Config) error {
 	if sockPath == "" {
 		sockPath = dockersock.Path()
 	} else {
-		sockPath = strings.TrimPrefix(sockPath, "unix://")
+		sockPath = strings.TrimPrefix(strings.TrimPrefix(sockPath, "unix://"), "npipe://")
 	}
 
 	// Verify local docker socket connectivity
-	if testConn, err := net.DialTimeout("unix", sockPath, 2*time.Second); err != nil {
+	if testConn, err := dialEngine(sockPath, 2*time.Second); err != nil {
 		log.Printf("[agent] warning: cannot connect to local Docker socket %s: %v", sockPath, err)
 		log.Printf("[agent] ensure Docker is running and this user has permission to access it")
 	} else {
@@ -202,11 +201,11 @@ func handleStream(stream *yamux.Stream, sockPath string) {
 		return
 	}
 
-	dockerConn, err := net.Dial("unix", sockPath)
+	dockerConn, err := dialEngine(sockPath, 10*time.Second)
 	if err != nil {
 		// the engine may have moved (Podman socket activated later, rootless)
 		if alt := dockersock.Find(); alt != "" && alt != sockPath {
-			dockerConn, err = net.Dial("unix", alt)
+			dockerConn, err = dialEngine(alt, 10*time.Second)
 		}
 	}
 	if err != nil {

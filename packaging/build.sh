@@ -15,6 +15,10 @@ for arch in amd64 arm64; do
 	CGO_ENABLED=0 GOOS=linux GOARCH=$arch \
 		go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o "dist/build/ducktainer-agent-linux-$arch" .
 done
+# …and the one Windows nodes download
+echo "→ go build windows/amd64 (agent)"
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+	go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o "dist/build/ducktainer-agent-windows-amd64.exe" .
 for arch in $ARCHES; do
 	case $arch in
 	amd64) cc=gcc ;;

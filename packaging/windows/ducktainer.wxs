@@ -34,6 +34,17 @@
         <Component Id="Icon">
           <File Id="ducktainer.ico" Source="$(sys.SOURCEFILEDIR)ducktainer.ico" KeyPath="yes" />
         </Component>
+        <?ifdef AgentDir ?>
+        <!-- static Linux agents: the server hands them to the nodes it enrolls -->
+        <Directory Id="AGENTFOLDER" Name="agent">
+          <Component Id="AgentLinuxAmd64">
+            <File Id="agent_linux_amd64" Source="$(AgentDir)\ducktainer-agent-linux-amd64" KeyPath="yes" />
+          </Component>
+          <Component Id="AgentLinuxArm64">
+            <File Id="agent_linux_arm64" Source="$(AgentDir)\ducktainer-agent-linux-arm64" KeyPath="yes" />
+          </Component>
+        </Directory>
+        <?endif?>
       </Directory>
     </StandardDirectory>
 
@@ -52,6 +63,10 @@
       <ComponentRef Id="Service" />
       <ComponentRef Id="Icon" />
       <ComponentRef Id="StartMenu" />
+      <?ifdef AgentDir ?>
+      <ComponentRef Id="AgentLinuxAmd64" />
+      <ComponentRef Id="AgentLinuxArm64" />
+      <?endif?>
     </Feature>
   </Package>
 </Wix>

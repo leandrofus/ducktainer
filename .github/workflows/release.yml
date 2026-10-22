@@ -91,7 +91,14 @@ jobs:
           $v = "$env:GITHUB_REF_NAME".TrimStart('v')
           go build -trimpath -ldflags "-s -w -X main.version=$env:GITHUB_REF_NAME" -o dist/ducktainer.exe .
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ./packaging/windows/build-msi.ps1 -Version $v -Exe dist/ducktainer.exe -Out "dist/ducktainer-$v-x64.msi"
+          # static Linux agents for the nodes this server enrolls
+          foreach ($a in 'amd64', 'arm64') {
+            $env:CGO_ENABLED = '0'; $env:GOOS = 'linux'; $env:GOARCH = $a
+            go build -trimpath -ldflags "-s -w -X main.version=$env:GITHUB_REF_NAME" -o "dist/agent/ducktainer-agent-linux-$a" .
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          Remove-Item Env:CGO_ENABLED, Env:GOOS, Env:GOARCH
+          ./packaging/windows/build-msi.ps1 -Version $v -Exe dist/ducktainer.exe -Out "dist/ducktainer-$v-x64.msi" -AgentDir dist/agent
           Copy-Item "dist/ducktainer-$v-x64.msi" dist/ducktainer-latest-x64.msi
       - name: Publish
         shell: pwsh

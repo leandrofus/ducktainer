@@ -459,11 +459,19 @@ func cmdAgent(args []string) error {
 	socket := fs.String("socket", "", i18n.Sprintf("local Docker socket path (default /var/run/docker.sock)"))
 	insecure := fs.Bool("insecure", false, i18n.Sprintf("skip TLS certificate verification (useful for self-signed certificates)"))
 	fp := fs.String("fingerprint", "", i18n.Sprintf("expected sha256 fingerprint of the server certificate"))
-	installService := fs.Bool("install-service", false, i18n.Sprintf("install and start as a systemd service (Linux)"))
+	tokenFile := fs.String("token-file", "", i18n.Sprintf("file holding the agent token (what the Windows service reads)"))
+	installService := fs.Bool("install-service", false, i18n.Sprintf("install and start as a service (systemd on Linux, Windows service on Windows)"))
 	fs.Parse(args)
 	if *token == "" {
 		// preferred: keeps the token out of `ps` and of the unit file
 		*token = os.Getenv("DUCKTAINER_AGENT_TOKEN")
+	}
+	if *token == "" && *tokenFile != "" {
+		t, err := agent.ReadTokenFile(*tokenFile)
+		if err != nil {
+			return err
+		}
+		*token = t
 	}
 
 	cfg := agent.Config{
@@ -478,6 +486,9 @@ func cmdAgent(args []string) error {
 
 	if *installService {
 		return agent.InstallService(cfg)
+	}
+	if runAgentService(cfg) { // started by the Windows Service Control Manager
+		return nil
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

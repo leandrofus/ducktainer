@@ -3,6 +3,8 @@ package i18n
 // ru is the Russian catalog: English format -> Russian format.
 // Keep keys identical to the English strings in the code.
 var ru = map[string]string{
+	"install and start as a service (systemd on Linux, Windows service on Windows)": "установить и запустить как службу (systemd в Linux, служба в Windows)",
+	"file holding the agent token (what the Windows service reads)":                 "файл с токеном агента (его читает служба Windows)",
 	"enter the image":                "укажите образ",
 	"\n  Docker API exposed on %s\n": "\n  API Docker опубликован на %s\n",
 	"\n  From another ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n": "\n  С другого ducktainer:\n    ducktainer endpoint add %s tcp://%s --token %s%s\n\n",
@@ -301,7 +303,6 @@ var ru = map[string]string{
 	"endpoint %s: %v": "хост %s: %v",
 	"expected sha256 fingerprint of the server certificate":                                     "ожидаемый отпечаток sha256 сертификата сервера",
 	"expected sha256 of the Docker zip (native mode)":                                           "ожидаемый sha256 zip-архива Docker (режим native)",
-	"install and start as a systemd service (Linux)":                                            "установить и запустить как службу systemd (Linux)",
 	"local Docker socket path (default /var/run/docker.sock)":                                   "путь к локальному сокету Docker (по умолчанию /var/run/docker.sock)",
 	"named pipes (npipe://) only exist on Windows":                                              "именованные каналы (npipe://) есть только в Windows",
 	"native (Windows containers): %s\n":                                                         "native (Windows-контейнеры): %s\n",

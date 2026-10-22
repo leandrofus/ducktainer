@@ -40,7 +40,10 @@ contents:
   - src: ./dist/build/ducktainer-linux-${ARCH}
     dst: /usr/bin/ducktainer
     file_info: { mode: 0755 }
-  # static agent binaries for nodes (any architecture, no glibc requirement)
+  # agent binaries for nodes: static, so no glibc requirement; Linux of any architecture and Windows
+  - src: ./dist/build/ducktainer-agent-windows-amd64.exe
+    dst: /usr/lib/ducktainer/agent/ducktainer-agent-windows-amd64.exe
+    file_info: { mode: 0755 }
   - src: ./dist/build/ducktainer-agent-linux-amd64
     dst: /usr/lib/ducktainer/agent/ducktainer-agent-linux-amd64
     file_info: { mode: 0755 }

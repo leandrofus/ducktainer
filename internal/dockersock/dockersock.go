@@ -7,12 +7,16 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
 // Default is where Docker (and podman-docker) listen.
 const Default = "/var/run/docker.sock"
+
+// Pipe is where the Docker engine listens on Windows.
+const Pipe = `\\.\pipe\docker_engine`
 
 type Candidate struct {
 	Path   string
@@ -73,6 +77,9 @@ func Find() string {
 // Path is Find, falling back to Default when nothing exists yet (the daemon
 // may still be starting).
 func Path() string {
+	if runtime.GOOS == "windows" {
+		return Pipe
+	}
 	if p := Find(); p != "" {
 		return p
 	}
