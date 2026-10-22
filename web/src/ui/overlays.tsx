@@ -84,14 +84,33 @@ export function Modal({
   wide?: boolean | 'xl'
   icon?: ReactNode
 }) {
+  const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const on = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const on = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Enter' || e.isComposing || e.altKey || e.shiftKey) return
+      const modal = box.current
+      if (!modal) return
+      // only the topmost of the open modals answers
+      const open = document.querySelectorAll('.modal')
+      if (open[open.length - 1] !== modal) return
+      const t = e.target as HTMLElement
+      if (t !== document.body && !modal.contains(t)) return
+      // buttons, links and menus keep their own Enter; in a text area Enter is a new line (Ctrl/Cmd+Enter confirms)
+      const inText = !!t.closest?.('textarea, [contenteditable="true"]')
+      if (t.closest?.('button, a, select, .xterm')) return
+      if (inText !== (e.ctrlKey || e.metaKey)) return
+      const ok = modal.querySelector<HTMLButtonElement>('.modal-foot .btn-primary:not(:disabled)')
+      if (!ok) return
+      e.preventDefault() // also stops the form's own implicit submit: the button does it once
+      ok.click()
+    }
     window.addEventListener('keydown', on)
     return () => window.removeEventListener('keydown', on)
   }, [onClose])
   return createPortal(
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal${wide === 'xl' ? ' modal-xl' : wide ? ' modal-wide' : ''}`} role="dialog">
+      <div ref={box} className={`modal${wide === 'xl' ? ' modal-xl' : wide ? ' modal-wide' : ''}`} role="dialog">
         <div className="modal-head">
           {icon}
           <h3>{title}</h3>
