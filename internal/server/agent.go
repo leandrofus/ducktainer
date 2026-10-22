@@ -11,9 +11,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -83,75 +80,6 @@ func validServerURL(v string) bool {
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != "" && u.RawQuery == "" && u.Fragment == ""
 }
 
-// agentBinDirs hold the agent binaries built for every architecture and
-// statically (no glibc), named ducktainer-agent-linux-<arch>: the packages
-// ship them in the first one. A node of any architecture, and one with an old
-// glibc (RHEL 8), gets one of these instead of this server's own binary.
-func agentBinDirs() []string {
-	return []string{"/usr/lib/ducktainer/agent", filepath.Join(config.Dir(), "agent")}
-}
-
-// agentBinary returns the file to hand to a node of this architecture: a
-// static build when there is one, otherwise this server's own binary if it is
-// for that architecture.
-func agentBinary(arch string) (string, bool) {
-	for _, dir := range agentBinDirs() {
-		p := filepath.Join(dir, "ducktainer-agent-linux-"+arch)
-		if st, err := os.Stat(p); err == nil && st.Mode().IsRegular() {
-			return p, true
-		}
-	}
-	if arch == runtime.GOARCH && runtime.GOOS == "linux" {
-		if exe, err := os.Executable(); err == nil {
-			return exe, true
-		}
-	}
-	return "", false
-}
-
-// agentArchs lists the architectures nodes can run.
-func agentArchs() []string {
-	var out []string
-	for _, a := range []string{"amd64", "arm64"} {
-		if _, ok := agentBinary(a); ok {
-			out = append(out, a)
-		}
-	}
-	return out
-}
-
-// offeredArchs describes what agentArchs found, for the installer's message.
-func offeredArchs() string {
-	if a := agentArchs(); len(a) > 0 {
-		return strings.Join(a, ", ")
-	}
-	return "none (a server that does not run on Linux needs the static agent binaries in " + agentBinDirs()[0] + ")"
-}
-
-// serveAgentBinary hands the agent binary to an enrolled node (any agent
-// token); ?arch= picks the architecture (default: this server's).
-func (s *Server) serveAgentBinary(w http.ResponseWriter, r *http.Request) {
-	ep, ok := s.agentEndpoint(bearer(r))
-	if !ok {
-		http.Error(w, "invalid or missing token", http.StatusUnauthorized)
-		return
-	}
-	agent.DefaultHub.SetVersion(ep.Name, r.Header.Get("X-Agent-Version"))
-	arch := r.URL.Query().Get("arch")
-	if arch == "" {
-		arch = runtime.GOARCH
-	}
-	exe, ok := agentBinary(arch)
-	if !ok {
-		http.Error(w, "no agent binary for "+arch, http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Disposition", `attachment; filename="ducktainer-agent"`)
-	w.Header().Set("Content-Type", "application/octet-stream")
-	http.ServeFile(w, r, exe)
-}
-
 // agentVersion tells an agent which version this server runs and whether its
 // host updates by itself; agents ask it periodically.
 func (s *Server) agentVersion(w http.ResponseWriter, r *http.Request) {
@@ -190,10 +118,23 @@ func (s *Server) agentInstall(w http.ResponseWriter, r *http.Request) {
 		flags += " --fingerprint " + fp
 	}
 	cands, loopback := s.serverCandidates(r)
+	if r.URL.Query().Get("os") == "windows" {
+		writeJSON(w, map[string]any{
+			"candidates":    cands,
+			"loopback_only": loopback,
+			"tls":           fp != "",
+			"targets":       agentTargets(),
+			"install":       psInstallCommand(server, ep.Token, fp),
+			"manual": fmt.Sprintf("$env:DUCKTAINER_AGENT_TOKEN = %s; .\\ducktainer-agent.exe agent --install-service --server %s --name %s%s",
+				psQuote(ep.Token), psQuote(server), psQuote(ep.Name), map[bool]string{true: " --fingerprint " + fp, false: ""}[fp != ""]),
+		})
+		return
+	}
 	writeJSON(w, map[string]any{
 		"candidates":    cands,
 		"loopback_only": loopback,
 		"tls":           fp != "",
+		"targets":       agentTargets(),
 		"install": fmt.Sprintf("%s %s %s | sudo sh", curl, auth,
 			shellQuote(server+"/api/agent/install.sh?server="+url.QueryEscape(server))),
 		"manual": fmt.Sprintf("%s %s %s -o ducktainer-agent && chmod +x ducktainer-agent && sudo DUCKTAINER_AGENT_TOKEN=%s ./ducktainer-agent agent %s --install-service",
@@ -255,7 +196,7 @@ esac
 BIN=/usr/local/bin/ducktainer-agent
 rm -f "$BIN.new"
 code=0
-curl -fsSL %s -H "Authorization: Bearer $TOKEN" "$SERVER/api/agent/binary?arch=$ARCH" -o "$BIN.new" || code=$?
+curl -fsSL %s -H "Authorization: Bearer $TOKEN" "$SERVER/api/agent/binary?os=linux&arch=$ARCH" -o "$BIN.new" || code=$?
 if [ "$code" != "0" ]; then
 	rm -f "$BIN.new"
 	case $code in
@@ -317,7 +258,7 @@ systemctl daemon-reload
 systemctl enable ducktainer-agent >/dev/null 2>&1
 systemctl restart ducktainer-agent
 echo "ducktainer-agent is running: systemctl status ducktainer-agent"
-`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), strings.Join(agentArchs(), " "), offeredArchs(), curlTLS)
+`, shellQuote(serverURL), shellQuote(ep.Name), shellQuote(fp), shellQuote(token), strings.Join(agentArchsFor("linux"), " "), offeredArchs("linux"), curlTLS)
 
 	w.Header().Set("Content-Type", "text/x-shellscript; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")

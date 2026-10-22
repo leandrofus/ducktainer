@@ -3,6 +3,8 @@ package i18n
 // es is the Spanish catalog: English format -> Spanish format.
 // Keep keys identical to the English strings in the code.
 var es = map[string]string{
+	"install and start as a service (systemd on Linux, Windows service on Windows)": "instalar e iniciar como servicio (systemd en Linux, servicio de Windows en Windows)",
+	"file holding the agent token (what the Windows service reads)":                 "archivo con el token del agente (lo que lee el servicio de Windows)",
 	"enter the image": "introduce la imagen",
 	"not an IP address or resolvable hostname: %s":                                           "no es una dirección IP ni un nombre de host resoluble: %s",
 	"\n  Docker API exposed on %s\n":                                                         "\n  API de Docker expuesta en %s\n",
@@ -301,7 +303,6 @@ var es = map[string]string{
 	"endpoint %s: %v": "host %s: %v",
 	"expected sha256 fingerprint of the server certificate":                                     "huella sha256 esperada del certificado del servidor",
 	"expected sha256 of the Docker zip (native mode)":                                           "sha256 esperado del zip de Docker (modo native)",
-	"install and start as a systemd service (Linux)":                                            "instalar e iniciar como servicio systemd (Linux)",
 	"local Docker socket path (default /var/run/docker.sock)":                                   "ruta del socket local de Docker (por defecto /var/run/docker.sock)",
 	"named pipes (npipe://) only exist on Windows":                                              "las named pipes (npipe://) solo existen en Windows",
 	"native (Windows containers): %s\n":                                                         "native (contenedores Windows): %s\n",

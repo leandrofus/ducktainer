@@ -1,6 +1,6 @@
 # Maintainer: ducktainer <ducktainer@localhost>
 # Builds ducktainer from the release tag, with PAM (sign-in with system users),
-# and ships the static agent binaries that nodes download.
+# and ships the static agent binaries (Linux and Windows) that nodes download.
 pkgname=ducktainer
 pkgver=1.8.0
 pkgrel=1
@@ -29,6 +29,7 @@ build() {
   for a in amd64 arm64; do
     CGO_ENABLED=0 GOOS=linux GOARCH=$a go build -ldflags "-s -w -X main.version=$pkgver" -o "build/ducktainer-agent-linux-$a" .
   done
+  CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.version=$pkgver" -o build/ducktainer-agent-windows-amd64.exe .
 }
 
 check() {
@@ -42,6 +43,7 @@ package() {
   for a in amd64 arm64; do
     install -Dm755 "build/ducktainer-agent-linux-$a" "$pkgdir/usr/lib/ducktainer/agent/ducktainer-agent-linux-$a"
   done
+  install -Dm755 build/ducktainer-agent-windows-amd64.exe "$pkgdir/usr/lib/ducktainer/agent/ducktainer-agent-windows-amd64.exe"
   for u in ducktainer.service ducktainer-pam.socket ducktainer-pam@.service; do
     install -Dm644 "packaging/systemd/$u" "$pkgdir/usr/lib/systemd/system/$u"
   done

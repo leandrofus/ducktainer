@@ -27,6 +27,8 @@ func newTestServer(t *testing.T) (*server.Server, *config.Config, func()) {
 		t.Fatal(err)
 	}
 	os.Setenv("DUCKTAINER_HOME", tmpDir)
+	// the agent binaries come from here, not from a ducktainer installed on this machine
+	os.Setenv("DUCKTAINER_AGENT_DIR", filepath.Join(tmpDir, "agent"))
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -43,6 +45,7 @@ func newTestServer(t *testing.T) (*server.Server, *config.Config, func()) {
 	cleanup := func() {
 		os.RemoveAll(tmpDir)
 		os.Unsetenv("DUCKTAINER_HOME")
+		os.Unsetenv("DUCKTAINER_AGENT_DIR")
 	}
 	return srv, cfg, cleanup
 }
@@ -92,7 +95,7 @@ func TestAgentInstallScriptAndBinary(t *testing.T) {
 
 	if runtime.GOOS != "linux" {
 		// a server that does not run on Linux cannot hand out its own binary: it serves the static agent builds
-		dir := filepath.Join(config.Dir(), "agent")
+		dir := os.Getenv("DUCKTAINER_AGENT_DIR")
 		os.MkdirAll(dir, 0o755)
 		os.WriteFile(filepath.Join(dir, "ducktainer-agent-linux-"+runtime.GOARCH), []byte("static"), 0o755)
 	}
@@ -215,7 +218,7 @@ func TestInstallScriptChecksBeforeTouchingTheNode(t *testing.T) {
 			t.Errorf("%q must run before the node is modified", step)
 		}
 	}
-	if !strings.Contains(script, "binary?arch=$ARCH") || !strings.Contains(script, "provides agent binaries for") {
+	if !strings.Contains(script, "arch=$ARCH") || !strings.Contains(script, "provides agent binaries for") {
 		t.Error("the architecture check is missing")
 	}
 	// a Linux server offers its own architecture; one that does not run on Linux
@@ -229,7 +232,7 @@ func TestAgentGetsTheStaticBinaryForItsArchitecture(t *testing.T) {
 	srv, cfg, cleanup := newTestServer(t)
 	defer cleanup()
 	addAgentHost(t, cfg, "edge-node", "edge-token")
-	dir := filepath.Join(config.Dir(), "agent")
+	dir := os.Getenv("DUCKTAINER_AGENT_DIR")
 	os.MkdirAll(dir, 0o755)
 	os.WriteFile(filepath.Join(dir, "ducktainer-agent-linux-arm64"), []byte("static-arm64"), 0o755)
 	h := srv.Handler()
@@ -278,5 +281,59 @@ func TestAgentVersionEndpoint(t *testing.T) {
 	})
 	if rec := get(h, "/api/agent/version", "edge-token"); !strings.Contains(rec.Body.String(), `"auto":false`) {
 		t.Fatalf("opted out: %s", rec.Body.String())
+	}
+}
+
+func TestWindowsAgentBinaryAndInstaller(t *testing.T) {
+	srv, cfg, cleanup := newTestServer(t)
+	defer cleanup()
+	addAgentHost(t, cfg, "win-node", "win-token")
+	dir := os.Getenv("DUCKTAINER_AGENT_DIR")
+	os.MkdirAll(dir, 0o755)
+	os.WriteFile(filepath.Join(dir, "ducktainer-agent-windows-amd64.exe"), []byte("MZ-amd64"), 0o755)
+	h := srv.Handler()
+
+	rec := get(h, "/api/agent/binary?os=windows&arch=amd64", "win-token")
+	if rec.Code != http.StatusOK || rec.Body.String() != "MZ-amd64" || !strings.Contains(rec.Header().Get("Content-Disposition"), "ducktainer-agent.exe") {
+		t.Fatalf("windows binary: %d %q %q", rec.Code, rec.Body.String(), rec.Header().Get("Content-Disposition"))
+	}
+	if rec := get(h, "/api/agent/binary?os=windows&arch=arm64", "win-token"); rec.Code != http.StatusNotFound {
+		t.Fatalf("windows/arm64 is not available: %d", rec.Code)
+	}
+	if rec := get(h, "/api/agent/binary?os=plan9&arch=amd64", "win-token"); rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown os: %d", rec.Code)
+	}
+
+	if rec := get(h, "/api/agent/install.ps1", ""); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("install.ps1 without token: %d", rec.Code)
+	}
+	script := get(h, "/api/agent/install.ps1?server=https%3A%2F%2F10.0.0.1%3A9900", "win-token").Body.String()
+	for _, want := range []string{"$Name = 'win-node'", "$Token = 'win-token'", "$Server = 'https://10.0.0.1:9900'", "$Archs = @('amd64')", "api/agent/binary?os=windows&arch=", "--install-service", "DuckPin"} {
+		if !strings.Contains(script, want) {
+			t.Errorf("install.ps1 lacks %q", want)
+		}
+	}
+	// nothing on the node changes before the downloaded binary has been checked
+	if run, install := strings.Index(script, "& $tmp version"), strings.Index(script, "--install-service"); run < 0 || run > install {
+		t.Error("the binary must be run (version) before the service is installed")
+	}
+	if strings.Contains(script, "@@") {
+		t.Error("an install.ps1 placeholder was left in the script")
+	}
+
+	// the UI asks for the PowerShell command and the list of platforms
+	req := httptest.NewRequest("GET", "/api/endpoints/win-node/agent-install?os=windows&server=https%3A%2F%2F10.0.0.1%3A9900", nil)
+	req.RemoteAddr = "127.0.0.1:50000" // the admin API is behind the allowlist
+	req.Header.Set("Authorization", "Bearer test-admin-token")
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "install.ps1") || !strings.Contains(rec.Body.String(), `"windows/amd64"`) {
+		t.Fatalf("agent-install?os=windows: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPowerShellQuoting(t *testing.T) {
+	if got := server.PSQuote("it's"); got != "'it''s'" {
+		t.Fatalf("PSQuote: %s", got)
 	}
 }
