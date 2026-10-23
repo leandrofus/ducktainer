@@ -3,6 +3,9 @@
 # ducktainer
 
 [![CI](https://github.com/leandrofus/ducktainer/actions/workflows/ci.yml/badge.svg)](https://github.com/leandrofus/ducktainer/actions/workflows/ci.yml)
+[![Версия](https://img.shields.io/github/v/release/leandrofus/ducktainer)](https://github.com/leandrofus/ducktainer/releases)
+[![Лицензия](https://img.shields.io/github/license/leandrofus/ducktainer)](LICENSE)
+[![Версия Go](https://img.shields.io/github/go-mod/go-version/leandrofus/ducktainer)](go.mod)
 
 Управление Docker в одном бинарном файле. ducktainer даёт веб-интерфейс для контейнеров, стеков compose, образов, сетей и томов, с логами и терминалами в реальном времени, каталогом приложений и приватными туннелями. Вход выполняется под вашими системными пользователями, и подключаться могут только разрешённые адреса.
 

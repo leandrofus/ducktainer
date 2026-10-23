@@ -3,6 +3,9 @@
 # ducktainer
 
 [![CI](https://github.com/leandrofus/ducktainer/actions/workflows/ci.yml/badge.svg)](https://github.com/leandrofus/ducktainer/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/leandrofus/ducktainer)](https://github.com/leandrofus/ducktainer/releases)
+[![License](https://img.shields.io/github/license/leandrofus/ducktainer)](LICENSE)
+[![Go version](https://img.shields.io/github/go-mod/go-version/leandrofus/ducktainer)](go.mod)
 
 Docker management in a single binary. ducktainer gives you a web UI for containers, compose stacks, images, networks and volumes, with live logs and terminals, an app marketplace, and private tunnels. You sign in with your system users, and only the addresses you allow can reach it.
 
