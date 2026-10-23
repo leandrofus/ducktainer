@@ -30,10 +30,12 @@ const variants = release
     <p>{t.installSub}</p>
     {release ? (
       <>
-        <div class="tabs" role="tablist" aria-label={t.system}>
-          {systems.map((s, i) => (
-            <button type="button" role="tab" data-sys={s.id} aria-selected={i === 0 ? 'true' : 'false'}>{s.label}</button>
-          ))}
+        <div class="tabs">
+          <div class="systems" role="tablist" aria-label={t.system}>
+            {systems.map((s, i) => (
+              <button type="button" role="tab" data-sys={s.id} aria-selected={i === 0 ? 'true' : 'false'}>{s.label}</button>
+            ))}
+          </div>
           <label class="arch"><span>{t.arch}</span>
             <select data-arch>
               {arches.map((a) => <option value={a.id}>{a.label}</option>)}

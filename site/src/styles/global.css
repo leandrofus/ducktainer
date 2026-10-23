@@ -173,6 +173,7 @@ h1, h2, h3 { font-family: Montserrat, "IBM Plex Sans", sans-serif; letter-spacin
 .panel h2 { font-size: 26px; margin: 0 0 4px; font-weight: 800; }
 .panel p { margin: 0 0 18px; color: var(--muted); font-size: 15px; }
 .tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; }
+.systems { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button {
   font: 500 14px "IBM Plex Sans", sans-serif; color: var(--ink);
   background: var(--chip); border: 1px solid transparent; border-radius: 999px;
@@ -351,7 +352,8 @@ h1, h2, h3 { font-family: Montserrat, "IBM Plex Sans", sans-serif; letter-spacin
   .prose td code { white-space: normal; }
 }
 @media (max-width: 440px) {
-  .top .brand span { display: none; }
+  /* hidden on phones, but kept for screen readers: the link needs a name */
+  .top .brand span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .hero-art img { animation: bob 5s ease-in-out infinite; transform-origin: 50% 80%; }

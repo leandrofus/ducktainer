@@ -1,5 +1,13 @@
 ---
 import '../styles/global.css'
+// fonts are served from this site, not Google, so visitors make no extra requests
+import '@fontsource/montserrat/700.css'
+import '@fontsource/montserrat/800.css'
+import '@fontsource/ibm-plex-sans/400.css'
+import '@fontsource/ibm-plex-sans/500.css'
+import '@fontsource/ibm-plex-sans/600.css'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
 import { getImage } from 'astro:assets'
 import { LANGS, type Lang } from '../i18n'
 import og from '../assets/og.png'
@@ -39,9 +47,6 @@ const ogLocale: Record<Lang, string> = { en: 'en_US', es: 'es_ES', ru: 'ru_RU' }
     {LANGS.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)}
     <meta property="og:image" content={new URL(ogImage.src, Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <slot />
