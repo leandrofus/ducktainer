@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config'
+import sitemap from '@astrojs/sitemap'
 
 // Served by GitHub Pages at https://leandrofus.github.io/ducktainer/.
 export default defineConfig({
@@ -11,4 +12,13 @@ export default defineConfig({
     locales: ['en', 'es', 'ru'],
     routing: { prefixDefaultLocale: false },
   },
+  // each URL lists its translations (hreflang alternates) for search engines
+  integrations: [
+    sitemap({
+      i18n: {
+        defaultLocale: 'en',
+        locales: { en: 'en-US', es: 'es-ES', ru: 'ru-RU' },
+      },
+    }),
+  ],
 })
