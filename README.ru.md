@@ -6,7 +6,7 @@
 
 Управление Docker в одном бинарном файле. ducktainer даёт веб-интерфейс для контейнеров, стеков compose, образов, сетей и томов, с логами и терминалами в реальном времени, каталогом приложений и приватными туннелями. Вход выполняется под вашими системными пользователями, и подключаться могут только разрешённые адреса.
 
-[Документация](https://leandrofus.github.io/ducktainer/ru/docs/) · [English](README.md) · [Español](README.es.md) · [Релизы](https://github.com/leandrofus/ducktainer/releases)
+[Документация](https://leandrofus.github.io/ducktainer/ru/docs/) · [Discord](https://discord.gg/H28S6chSy) · [English](README.md) · [Español](README.es.md) · [Релизы](https://github.com/leandrofus/ducktainer/releases)
 
 ## Возможности
 

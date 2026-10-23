@@ -6,7 +6,7 @@
 
 Administración de Docker en un solo binario. ducktainer te da una interfaz web para contenedores, stacks compose, imágenes, redes y volúmenes, con logs y terminales en vivo, un marketplace de aplicaciones y túneles privados. Entras con tus usuarios del sistema, y solo llegan a él las direcciones que permitas.
 
-[Documentación](https://leandrofus.github.io/ducktainer/es/docs/) · [English](README.md) · [Русский](README.ru.md) · [Versiones](https://github.com/leandrofus/ducktainer/releases)
+[Documentación](https://leandrofus.github.io/ducktainer/es/docs/) · [Discord](https://discord.gg/H28S6chSy) · [English](README.md) · [Русский](README.ru.md) · [Versiones](https://github.com/leandrofus/ducktainer/releases)
 
 ## Características
 

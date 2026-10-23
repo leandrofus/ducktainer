@@ -2,6 +2,8 @@
 
 Thanks for helping. This guide covers how to report a problem, set up the project, run the checks, and send a change. Everyone who takes part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
+To talk with other users and contributors, join the [Discord server](https://discord.gg/H28S6chSy). Use it for questions and ideas; bugs and feature requests still go in GitHub issues, so they can be tracked.
+
 ## Reporting a problem
 
 Open an issue at <https://github.com/leandrofus/ducktainer/issues>. Include:
