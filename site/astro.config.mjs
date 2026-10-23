@@ -1,5 +1,19 @@
+import { copyFile } from 'node:fs/promises'
 import { defineConfig } from 'astro/config'
 import sitemap from '@astrojs/sitemap'
+
+// Crawlers look for /sitemap.xml by default; the integration writes sitemap-index.xml.
+// Copy the index to that name once the sitemap integration has written it.
+function sitemapAlias() {
+  return {
+    name: 'sitemap-alias',
+    hooks: {
+      'astro:build:done': async ({ dir }) => {
+        await copyFile(new URL('sitemap-index.xml', dir), new URL('sitemap.xml', dir))
+      },
+    },
+  }
+}
 
 // Served by GitHub Pages at https://leandrofus.github.io/ducktainer/.
 export default defineConfig({
@@ -20,5 +34,6 @@ export default defineConfig({
         locales: { en: 'en-US', es: 'es-ES', ru: 'ru-RU' },
       },
     }),
+    sitemapAlias(),
   ],
 })
