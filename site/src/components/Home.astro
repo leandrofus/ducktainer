@@ -20,7 +20,23 @@ const homeAlternates = Object.fromEntries(LANGS.map((l) => [l, homePath(l)])) as
 const logo = await getImage({ src: logoDark, format: 'webp', quality: 92 })
 const featureIcons = ['box', 'layers', 'disk', 'grid', 'users', 'history']
 const hostIcons = ['key', 'outbound', 'shield']
+// structured data for search engines: what ducktainer is, where it runs, its license
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'ducktainer',
+  description: t.description,
+  url: new URL(homePath(lang), Astro.site).href,
+  inLanguage: lang,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Linux, Windows, macOS',
+  license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+  codeRepository: REPO_URL,
+  softwareVersion: release?.tag,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+}
 ---
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 <div class="hero">
   <Header lang={lang} alternates={homeAlternates} onHero />
   <div class="wrap hero-in">

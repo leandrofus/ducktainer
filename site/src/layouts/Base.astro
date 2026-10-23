@@ -14,6 +14,8 @@ interface Props {
 const { lang, title, description, alternates } = Astro.props
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const ogImage = await getImage({ src: og, format: 'png' })
+const canonical = new URL(alternates[lang], Astro.site)
+const ogLocale: Record<Lang, string> = { en: 'en_US', es: 'es_ES', ru: 'ru_RU' }
 ---
 <!doctype html>
 <html lang={lang}>
@@ -26,10 +28,15 @@ const ogImage = await getImage({ src: og, format: 'png' })
     <meta name="theme-color" content="#EAF4FC" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0B1626" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="manifest" href={`${base}/site.webmanifest`} />
+    <link rel="canonical" href={canonical} />
     {LANGS.map((l) => <link rel="alternate" hreflang={l} href={new URL(alternates[l], Astro.site)} />)}
     <link rel="alternate" hreflang="x-default" href={new URL(alternates.en, Astro.site)} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    {LANGS.filter((l) => l !== lang).map((l) => <meta property="og:locale:alternate" content={ogLocale[l]} />)}
     <meta property="og:image" content={new URL(ogImage.src, Astro.site)} />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
