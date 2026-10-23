@@ -1,6 +1,7 @@
 ---
 import { strings, type Lang } from '../i18n'
 import { REPO_URL, docsPath, homePath } from '../paths'
+import { Image } from 'astro:assets'
 import ship from '../assets/ship.png'
 
 interface Props {
@@ -12,7 +13,7 @@ const t = strings[lang]
 <footer class="foot">
   <div class="wrap foot-in">
     <a class="brand" href={homePath(lang)}>
-      <img src={ship.src} alt="" width="40" height={Math.round(40 * ship.height / ship.width)} />
+      <Image src={ship} alt="" width={40} format="webp" />
       <span>ducktainer</span>
     </a>
     <span class="grow">{t.foot}</span>

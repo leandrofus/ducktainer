@@ -2,6 +2,7 @@
 import Icon from './Icon.astro'
 import { LANGS, langName, strings, type Lang } from '../i18n'
 import { REPO_URL, docsPath, homePath } from '../paths'
+import { Image } from 'astro:assets'
 import ship from '../assets/ship.png'
 
 interface Props {
@@ -18,7 +19,7 @@ const t = strings[lang]
 <header class:list={['top', { 'on-hero': onHero }]}>
   <nav class="wrap bar" aria-label={t.nav}>
     <a class="brand" href={homePath(lang)}>
-      <img src={ship.src} alt="" width="46" height={Math.round(46 * ship.height / ship.width)} />
+      <Image src={ship} alt="" width={46} format="webp" />
       <span>ducktainer</span>
     </a>
     <span class="grow"></span>
