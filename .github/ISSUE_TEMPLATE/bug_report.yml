@@ -1,0 +1,53 @@
+name: Bug report
+description: Something does not work as the documentation says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug. Please fill in what you can; the version and the steps are the most useful parts.
+  - type: input
+    id: version
+    attributes:
+      label: ducktainer version
+      description: Output of `ducktainer version`.
+      placeholder: "1.5.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - rpm (RHEL, Fedora)
+        - deb (Debian, Ubuntu)
+        - MSI (Windows)
+        - Single binary
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and Docker version
+      placeholder: "Ubuntu 24.04, Docker 27.3"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open a container's Logs tab\n2. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant lines from `journalctl -u ducktainer`, or from the audit log in Settings → Audit. Remove any tokens or passwords first.
+      render: text

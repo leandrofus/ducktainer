@@ -1,6 +1,6 @@
 # Contributing to ducktainer
 
-Thanks for helping. This guide covers how to report a problem, set up the project, run the checks, and send a change.
+Thanks for helping. This guide covers how to report a problem, set up the project, run the checks, and send a change. Everyone who takes part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Reporting a problem
 
@@ -11,7 +11,7 @@ Open an issue at <https://github.com/leandrofus/ducktainer/issues>. Include:
 - the steps to reproduce, and what you expected instead;
 - the relevant lines from the audit log or the system journal, if any.
 
-For a security vulnerability, do not open a public issue. Contact the maintainer privately through GitHub.
+For a security vulnerability, do not open a public issue. Report it privately as described in [SECURITY.md](SECURITY.md).
 
 ## Setting up
 

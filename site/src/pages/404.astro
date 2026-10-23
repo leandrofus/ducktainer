@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro'
+import { LANGS, type Lang } from '../i18n'
+import { homePath } from '../paths'
+
+const alternates = Object.fromEntries(LANGS.map((l) => [l, homePath(l)])) as Record<Lang, string>
+---
+<Base lang="en" title="Page not found · ducktainer" description="This page does not exist." alternates={alternates}>
+  <main class="wrap" style="padding-top: 120px; padding-bottom: 120px; text-align: center;">
+    <p style="margin: 0; font-weight: 600; color: var(--link);">404</p>
+    <h1 style="margin: 12px 0 16px;">Page not found</h1>
+    <p style="margin: 0 0 32px; color: var(--muted);">The page you were looking for does not exist, or it moved.</p>
+    <a class="btn" href={homePath('en')}>Back to ducktainer</a>
+  </main>
+</Base>
