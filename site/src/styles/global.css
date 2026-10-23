@@ -75,6 +75,9 @@ h1, h2, h3 { font-family: Montserrat, "IBM Plex Sans", sans-serif; letter-spacin
 .on-hero .bar > a:not(.brand):hover { color: var(--duck); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
 .brand img { display: block; height: auto; }
+/* the mark is generated at 120 px (retina for these sizes); CSS sets the size on screen */
+.top .brand img { width: 46px; }
+.foot .brand img { width: 40px; }
 .brand span { font: 800 19px Montserrat, sans-serif; letter-spacing: -.01em; }
 /* language menu: the current language, the others in a popover */
 .langmenu { position: relative; }

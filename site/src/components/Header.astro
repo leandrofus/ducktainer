@@ -19,7 +19,7 @@ const t = strings[lang]
 <header class:list={['top', { 'on-hero': onHero }]}>
   <nav class="wrap bar" aria-label={t.nav}>
     <a class="brand" href={homePath(lang)}>
-      <Image src={ship} alt="" width={46} format="webp" />
+      <Image src={ship} alt="" width={120} format="webp" />
       <span>ducktainer</span>
     </a>
     <span class="grow"></span>
@@ -27,7 +27,7 @@ const t = strings[lang]
     <a class="hide-sm" href={`${REPO_URL}/releases`}>{t.releases}</a>
     <a href={REPO_URL} aria-label="GitHub"><Icon name="github" /></a>
     <details class="langmenu">
-      <summary aria-label={`${t.language}: ${langName[lang]}`}>
+      <summary>
         <Icon name="globe" />
         <span class="lang-name">{langName[lang]}</span><span class="lang-code">{lang.toUpperCase()}</span>
         <span class="chev"><Icon name="chevron" /></span>
