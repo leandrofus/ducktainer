@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -53,6 +54,8 @@ type stackInfo struct {
 	Writable bool `json:"writable"`
 	// Reason explains why the compose files can't be edited from here.
 	Reason string `json:"reason,omitempty"`
+	// Fix is set when Reason is a missing write permission the user can grant.
+	Fix *permFix `json:"fix,omitempty"`
 	// Location: a ducktainer stack kept in its own directory (not the store).
 	Location *compose.Location `json:"location,omitempty"`
 	// Node: the files live on the remote node (compose runs there).
@@ -137,6 +140,7 @@ func (s *Server) stacks(ctx context.Context, c *docker.Client, epName, lang stri
 			for _, f := range files {
 				if !compose.Writable(f) {
 					st.Writable, st.Reason = false, i18n.T(lang, "no write permission on %s for user %s (read-only)", f, runUser())
+					st.Fix = newPermFix(f)
 					break
 				}
 			}
@@ -173,6 +177,27 @@ func editable(ctx context.Context, st *stackInfo, local bool, lang string) (bool
 		}
 	}
 	return true, ""
+}
+
+// permFix carries what the UI needs to explain, in a dialog, how to give the
+// service user write access to a compose file (and its directory, where the
+// .bak copy is made on save).
+type permFix struct {
+	File  string `json:"file"`
+	Dir   string `json:"dir"`
+	User  string `json:"user"`
+	Group string `json:"group"`
+}
+
+func newPermFix(file string) *permFix {
+	u := runUser()
+	g := u
+	if cu, err := user.Current(); err == nil {
+		if gr, err := user.LookupGroupId(cu.Gid); err == nil {
+			g = gr.Name
+		}
+	}
+	return &permFix{File: file, Dir: filepath.Dir(file), User: u, Group: g}
 }
 
 func runUser() string {

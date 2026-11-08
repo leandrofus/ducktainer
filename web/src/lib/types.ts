@@ -97,7 +97,10 @@ export interface Stack {
   total: number
   status: 'running' | 'partial' | 'stopped' | 'empty'
   editable: boolean
+  writable?: boolean
   reason?: string
+  // set when the compose file is read-only for the service user and can be fixed
+  fix?: { file: string; dir: string; user: string; group: string }
   env_file?: string
   // kept in its own directory instead of the ducktainer store
   location?: StackLocation
