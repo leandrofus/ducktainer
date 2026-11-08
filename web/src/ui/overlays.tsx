@@ -312,10 +312,19 @@ setTaskTracker((method, path, p, title) => void trackTask(title || taskTitle(met
 function JobsTray() {
   const list = jobs.use()
   const [collapsed, setCollapsed] = useState(false)
-  const endRefs = useRef<Record<number, HTMLDivElement | null>>({})
-  const visible = list.filter((j) => j.state === 'running' || Date.now() - j.started < 10 * 60e3 || j.open)
+  // Oldest first, newest at the bottom, like the logs. Each scroll box follows
+  // its end only while the user is already there, so reading older lines works.
+  const logRefs = useRef<Record<number, HTMLDivElement | null>>({})
+  const stick = useRef<Record<string, boolean>>({})
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const visible = list.filter((j) => j.state === 'running' || Date.now() - j.started < 10 * 60e3 || j.open).reverse()
+  const atEnd = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight < 24
   useEffect(() => {
-    visible.forEach((j) => j.open && endRefs.current[j.id]?.scrollIntoView({ block: 'nearest' }))
+    visible.forEach((j) => {
+      const el = logRefs.current[j.id]
+      if (j.open && el && stick.current['l' + j.id] !== false) el.scrollTop = el.scrollHeight
+    })
+    if (listRef.current && stick.current.list !== false) listRef.current.scrollTop = listRef.current.scrollHeight
   })
   if (!visible.length) return null
   const running = visible.filter((j) => j.state === 'running').length
@@ -338,7 +347,7 @@ function JobsTray() {
         </button>
       </div>
       {!collapsed && (
-        <div className="jobs-list">
+        <div className="jobs-list" ref={listRef} onScroll={(e) => void (stick.current.list = atEnd(e.currentTarget))}>
           {visible.map((j) => {
             const ls = Object.entries(j.layers)
             const total = ls.reduce((a, [, l]) => a + (l.total || 0), 0)
@@ -358,7 +367,7 @@ function JobsTray() {
                   </div>
                 )}
                 {j.open && (
-                  <div className="job-log">
+                  <div className="job-log" ref={(el) => void (logRefs.current[j.id] = el)} onScroll={(e) => void (stick.current['l' + j.id] = atEnd(e.currentTarget))}>
                     {ls.map(([id, l]) => (
                       <div key={id} className="job-layer">
                         <code>{id.slice(0, 12)}</code> {l.status}
@@ -369,7 +378,6 @@ function JobsTray() {
                       <div key={i}>{l}</div>
                     ))}
                     {j.error && <div className="tone-bad">✗ {j.error}</div>}
-                    <div ref={(el) => void (endRefs.current[j.id] = el)} />
                   </div>
                 )}
               </div>

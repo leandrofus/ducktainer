@@ -1,6 +1,6 @@
 import { t as tr, tc } from '../i18n'
 import { useEffect, useMemo, useState } from 'react'
-import { Layers, Plus, Search, ChevronRight, Rocket, Save, Undo2, FolderOpen, Box, Play, Square, RotateCw, RefreshCw, LayoutGrid, LayoutList, Combine, FolderInput } from 'lucide-react'
+import { Layers, Plus, Search, ChevronRight, Rocket, Save, Undo2, FolderOpen, Box, Play, Square, RotateCw, RefreshCw, LayoutGrid, LayoutList, Combine, FolderInput, ShieldAlert } from 'lucide-react'
 import { api, enc } from '../lib/api'
 import type { Container, Endpoint, Stack, StackFiles, StackLocation } from '../lib/types'
 import { useResource, invalidate } from '../lib/store'
@@ -365,6 +365,14 @@ export function StackRecord({ ep, name, tab = 'services' }: { ep: string; name: 
           <MenuButton items={() => stackActions(ep, s)} className="btn" />
         </div>
       </header>
+      {s.fix && (
+        <div className="alert alert-warn">
+          <ShieldAlert size={16} />
+          <span className="grow">
+            {s.reason} <a href="#" onClick={(e) => { e.preventDefault(); openDialog((close) => <PermFixDialog fix={s.fix!} onClose={close} />) }}>{tr('How to fix it')}</a>
+          </span>
+        </div>
+      )}
       <div className="record-body">
         <aside className="record-side">
           <Section title={tr('Properties')}>
@@ -376,7 +384,7 @@ export function StackRecord({ ep, name, tab = 'services' }: { ep: string; name: 
                 s.working_dir && [tr('Directory'), <span className="mono small">{s.working_dir}</span>, () => [{ label: tr('Copy directory'), onClick: () => copy(s.working_dir!) }]],
                 s.location?.env_file && ['.env', <span className="mono small">{s.location.env_file}</span>],
                 data.files && [tr('Files'), <span className="mono small">{data.files.files.map((f) => f.name).join(' + ')}</span>, () => data.files!.files.map((f) => ({ label: tr('Copy path of {0}', f.name), onClick: () => copy(f.path) }))],
-                ['Editable', s.editable ? tr('Yes') : <span title={s.reason}>{tr('No ·')} {s.reason}</span>],
+                ['Editable', s.editable ? tr('Yes') : <span title={s.reason} style={{ whiteSpace: "pre-wrap" }}>{tr('No ·')} {s.reason}</span>],
               ]}
             />
           </Section>
@@ -490,6 +498,7 @@ function ComposeEditor({ ep, stack, files, filesError }: { ep: string; stack: St
       invalidate(`/stacks`, '/containers')
     } catch (e) {
       toast.err(e)
+      if (stack.fix) openDialog((close) => <PermFixDialog fix={stack.fix!} onClose={close} />)
     } finally {
       setBusy(false)
     }
@@ -644,3 +653,40 @@ function AdoptDialog({ ep, name, onClose }: { ep: string; name: string; onClose:
   )
 }
 
+
+const quote = (v: string) => "'" + v.replace(/'/g, "'\\''") + "'"
+
+function CmdLine({ cmd }: { cmd: string }) {
+  return (
+    <div className="row gap" style={{ alignItems: 'flex-start' }}>
+      <pre className="mono small grow" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', userSelect: 'all' }}>{cmd}</pre>
+      <button className="btn btn-sm" onClick={() => copy(cmd)}>{tr('Copy')}</button>
+    </div>
+  )
+}
+
+/** Explains, with copyable commands, how to let the service user write a compose file. */
+function PermFixDialog({ fix, onClose }: { fix: NonNullable<Stack['fix']>; onClose: () => void }) {
+  const f = quote(fix.file)
+  const d = quote(fix.dir)
+  return (
+    <Modal wide title={tr('Allow ducktainer to save this compose file')} onClose={onClose} footer={<button className="btn btn-primary" onClick={onClose}>{tr('Close')}</button>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <p>
+          {tr('ducktainer runs as the user {0} and cannot write {1}, so it cannot save changes or redeploy from the editor.', fix.user, fix.file)}
+        </p>
+        <p>
+          {tr('Run these commands on the machine where ducktainer is installed. Each one is independent: copy and run them one at a time. The directory also needs write access because a .bak copy is made when saving.')}
+        </p>
+        <h4>{tr('Option 1 · ACL (keeps the current owner and group)')}</h4>
+        <CmdLine cmd={`sudo setfacl -m u:${fix.user}:rw ${f}`} />
+        <CmdLine cmd={`sudo setfacl -m u:${fix.user}:rwx ${d}`} />
+        <h4>{tr('Option 2 · group permissions')}</h4>
+        <p className="muted small">{tr('Use this if setfacl says "Operation not supported" or is not installed. It changes the group of the file and the directory.')}</p>
+        <CmdLine cmd={`sudo chgrp ${fix.group} ${f} ${d}`} />
+        <CmdLine cmd={`sudo chmod g+w ${f} ${d}`} />
+        <p className="muted small">{tr('If neither works, the filesystem is probably read-only or a network share (NFS, SMB) that ignores these permissions: change the permissions on the server that shares it.')}</p>
+      </div>
+    </Modal>
+  )
+}

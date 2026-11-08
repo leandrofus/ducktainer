@@ -1520,4 +1520,12 @@ export const ru: Record<string, string> = {
   "This server has no agent binary for {0}": "У этого сервера нет бинарника агента для {0}",
   "Run this in an elevated PowerShell (Run as administrator) on the node:": "Выполните это в PowerShell с правами администратора на узле:",
   "Needs Windows PowerShell 5.1 or PowerShell 7 and the Docker engine on the node (named pipe docker_engine). It installs the ducktainer-agent Windows service.": "Нужен Windows PowerShell 5.1 или PowerShell 7 и движок Docker на узле (именованный канал docker_engine). Устанавливает службу Windows ducktainer-agent.",
+  "How to fix it": "Как исправить",
+  "Allow ducktainer to save this compose file": "Разрешить ducktainer сохранять этот compose-файл",
+  "ducktainer runs as the user {0} and cannot write {1}, so it cannot save changes or redeploy from the editor.": "ducktainer работает от пользователя {0} и не может писать в {1}, поэтому не может сохранять изменения и передеплоить из редактора.",
+  "Run these commands on the machine where ducktainer is installed. Each one is independent: copy and run them one at a time. The directory also needs write access because a .bak copy is made when saving.": "Выполните эти команды на машине, где установлен ducktainer. Копируйте и запускайте их по одной. Каталогу тоже нужен доступ на запись: при сохранении создаётся копия .bak.",
+  "Option 1 · ACL (keeps the current owner and group)": "Вариант 1 · ACL (владелец и группа не меняются)",
+  "Option 2 · group permissions": "Вариант 2 · права группы",
+  "Use this if setfacl says \"Operation not supported\" or is not installed. It changes the group of the file and the directory.": "Используйте, если setfacl пишет \"Operation not supported\" или не установлен. Меняет группу файла и каталога.",
+  "If neither works, the filesystem is probably read-only or a network share (NFS, SMB) that ignores these permissions: change the permissions on the server that shares it.": "Если ничего не помогло, вероятно, файловая система только для чтения или это сетевой ресурс (NFS, SMB), игнорирующий эти права: измените права на сервере, который его раздаёт.",
 }

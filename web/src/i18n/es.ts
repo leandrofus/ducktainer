@@ -1512,4 +1512,12 @@ export const es: Record<string, string> = {
   "This server has no agent binary for {0}": "Este servidor no tiene binario de agente para {0}",
   "Run this in an elevated PowerShell (Run as administrator) on the node:": "Ejecuta esto en un PowerShell elevado (Ejecutar como administrador) en el nodo:",
   "Needs Windows PowerShell 5.1 or PowerShell 7 and the Docker engine on the node (named pipe docker_engine). It installs the ducktainer-agent Windows service.": "Necesita Windows PowerShell 5.1 o PowerShell 7 y el motor Docker en el nodo (named pipe docker_engine). Instala el servicio de Windows ducktainer-agent.",
+  "How to fix it": "Cómo solucionarlo",
+  "Allow ducktainer to save this compose file": "Permitir que ducktainer guarde este compose",
+  "ducktainer runs as the user {0} and cannot write {1}, so it cannot save changes or redeploy from the editor.": "ducktainer se ejecuta como el usuario {0} y no puede escribir {1}, así que no puede guardar cambios ni redesplegar desde el editor.",
+  "Run these commands on the machine where ducktainer is installed. Each one is independent: copy and run them one at a time. The directory also needs write access because a .bak copy is made when saving.": "Ejecuta estos comandos en la máquina donde está instalado ducktainer. Cópialos y ejecútalos de uno en uno. El directorio también necesita permiso de escritura porque al guardar se crea una copia .bak.",
+  "Option 1 · ACL (keeps the current owner and group)": "Opción 1 · ACL (mantiene el dueño y el grupo actuales)",
+  "Option 2 · group permissions": "Opción 2 · permisos de grupo",
+  "Use this if setfacl says \"Operation not supported\" or is not installed. It changes the group of the file and the directory.": "Úsala si setfacl dice \"Operation not supported\" o no está instalado. Cambia el grupo del archivo y del directorio.",
+  "If neither works, the filesystem is probably read-only or a network share (NFS, SMB) that ignores these permissions: change the permissions on the server that shares it.": "Si ninguna funciona, el sistema de archivos probablemente es de solo lectura o una unidad de red (NFS, SMB) que ignora estos permisos: cambia los permisos en el servidor que la comparte.",
 }

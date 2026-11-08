@@ -336,7 +336,7 @@ input[type='checkbox'] { accent-color: var(--accent); width: 14px; height: 14px;
 .empty { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty-icon { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 4px; }
 .empty p { max-width: 420px; margin: 0 0 8px; }
-.alert { padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text-2); }
+.alert { padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text-2); white-space: pre-wrap; }
 .alert-bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 30%, transparent); color: var(--bad); }
 .alert-warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, transparent); color: var(--warn); }
 
